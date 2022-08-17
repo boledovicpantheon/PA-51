@@ -1,1 +1,0 @@
-kubeadm join 192.168.56.10:6443 --token hf5uhr.zhtzmfby7vl4xx33 --discovery-token-ca-cert-hash sha256:19e169b679cabc10f5a5be7f0e41429f20ecd6acd1f3c5f2611f99544a317d1f 
