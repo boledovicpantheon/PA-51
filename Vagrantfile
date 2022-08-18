@@ -34,7 +34,7 @@ end
       master.vm.box = "#{IMAGE_NAME}"
       master.vm.network "private_network", ip: "192.168.56.#{10 + i}"
       master.vm.hostname = "master-#{i}"
-      master.vm.network "forwarded_port", guest: 22, host: "#{64000 + i}"
+      master.vm.network "forwarded_port", guest: 22, host: "#{65400 + i}"
 
       master.vm.provision "ansible_local" do |ansible|
         ansible.provisioning_path = "/vagrant"
@@ -57,7 +57,7 @@ end
       node.vm.box = "#{IMAGE_NAME}"
       node.vm.network "private_network", ip: "192.168.56.#{100 + i}"
       node.vm.hostname = "node-#{i}"
-      node.vm.network "forwarded_port", guest: 22, host: "#{65000 + i}"
+      node.vm.network "forwarded_port", guest: 22, host: "#{65500 + i}"
 
       node.vm.provision "ansible_local" do |ansible|
         ansible.provisioning_path = "/vagrant"

@@ -7,7 +7,7 @@
     shell: kubeadm config images pull
 
   - name: Initialize kubernetes cluster
-    shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 --v=5
+    shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 #--kubernetes-version 1.24.4 # 192.168.0.0/16 
 
   - name: Setup kubeconfig for vagrant user
     shell: "{{ item }}"
@@ -17,7 +17,7 @@
       - chown vagrant:vagrant /home/vagrant/.kube/config
       - export KUBECONFIG=/home/vagrant/.kube/config
 
-  - name: Install weawe pod network
+  - name: Install flannel pod network
     become: false
-    shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+    shell: "kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml" # && kubectl create -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml"
 
