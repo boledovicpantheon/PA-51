@@ -7,7 +7,7 @@
     shell: kubeadm config images pull
 
   - name: Initialize kubernetes cluster
-    shell: kubeadm init --pod-network-cidr 10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 #--kubernetes-version 1.24.4 # 192.168.0.0/16 
+    shell: kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 
 
   - name: Setup kubeconfig for vagrant user
     shell: "{{ item }}"
@@ -17,7 +17,48 @@
       - chown vagrant:vagrant /home/vagrant/.kube/config
       - export KUBECONFIG=/home/vagrant/.kube/config
 
-  - name: Install flannel pod network
-    become: false
-    shell: "kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml" # && kubectl create -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml"
+  - name: Generate join command
+    shell: kubeadm token create --print-join-command
+    register: join_command
 
+  - name: Copy join command to local file
+    local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+
+  - name: Install calico pod network
+    become: false
+    shell: "kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.0/manifests/calico.yaml" # "kubectl apply -f https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml"
+
+
+
+
+  - name: Install Ingress controller
+    become: false
+    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.0.0/deploy/static/provider/baremetal/deploy.yaml
+
+  - name: Deploy deployment.yaml
+    become: false
+    shell: kubectl apply -f /vagrant/deployment/deployment.yaml
+
+  - name: Deploy services.yaml
+    become: false
+    shell: kubectl apply -f /vagrant/deployment/services.yaml
+
+  - name: Delete default ValidatingWebhookConfiguration 
+    become: false
+    shell: kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
+
+  - name: Create Ingress service
+    become: false
+    shell: kubectl apply -f /vagrant/deployment/ingress-nginx.yaml
+
+  - name: Deploy kubernetes dashboard
+    become: false
+    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+
+  
+
+  - name: Create directories for TLS certificates
+    become: false
+    shell: "{{ item}}"
+    with_items:
+      - "mkdir -p registry"

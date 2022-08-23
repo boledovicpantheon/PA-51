@@ -136,13 +136,19 @@
       state: restarted
       daemon_reload: true
 
-  - shell: mkdir -p /etc/containerd && containerd config default>/etc/containerd/config.toml
-
-  - name: Enable containerd serivce
-    ansible.builtin.service:
-      name: containerd
-      enabled: yes
-
+  - name: Install RunC and create default settings for containerd
+    shell: '{{ item }}'
+    with_items: 
+    - wget https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64
+    - sudo install -m 755 runc.amd64 /usr/local/sbin/runc && rm runc.amd64
+    - mkdir -p /etc/containerd && containerd config default>/etc/containerd/config.toml
+  
+  - name: SystemdCgroup = true
+    lineinfile:
+      dest: /etc/containerd/config.toml
+      regexp: 'SystemdCgroup = false'
+      line: 'SystemdCgroup = true'
+ 
   - name: Restart containerd, also do daemon-reload
     ansible.builtin.service:
       name: containerd
@@ -170,3 +176,8 @@
         - kubelet 
         - kubeadm 
         - kubectl
+
+  - name: Restart kubelet
+    ansible.builtin.service:
+      name: kubelet
+      state: restarted

@@ -1,2 +1,4 @@
 .vagrant
 .vscode
+ansible/join-command
+box/

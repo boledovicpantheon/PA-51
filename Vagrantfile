@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-IMAGE_NAME = "ubuntu/jammy64" #"bento/ubuntu-22.04" 
+IMAGE_NAME = "box/packer_ubuntu-server-22.04.box" #"ubuntu/jammy64" 
 N = 2   # number of worker nodes
 M = 1   # number of master nodes
 
@@ -44,7 +44,7 @@ end
       end
 
       master.vm.provider "virtualbox" do |v| 
-        v.memory = 4096
+        v.memory = 2048
         v.cpus = 2
         v.name = "master-#{i}"
       end
@@ -67,12 +67,13 @@ end
       end
       
       node.vm.provider "virtualbox" do |v| 
-        v.memory = 2048
+        v.memory = 1536
         v.cpus = 1
         v.name = "node-#{i}"
       end
     end
   end
+  
 end
 
 
