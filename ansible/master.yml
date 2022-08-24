@@ -1,7 +1,7 @@
 ---
 - hosts: all
   become: true
-  gather_facts: yes
+  gather_facts: no
   tasks: 
   - name: Pull required containers
     shell: kubeadm config images pull
@@ -47,18 +47,41 @@
     become: false
     shell: kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
 
-  - name: Create Ingress service
+  - name: Deploy ingress.yaml
     become: false
-    shell: kubectl apply -f /vagrant/deployment/ingress-nginx.yaml
+    shell: kubectl apply -f /vagrant/deployment/ingress.yaml
 
-  - name: Deploy kubernetes dashboard
-    become: false
-    shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+ #- name: Deploy kubernetes dashboard
+ #  become: false
+ #  shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
 
-  
+
+
 
   - name: Create directories for TLS certificates
     become: false
     shell: "{{ item}}"
     with_items:
-      - "mkdir -p registry"
+      - " mkdir -p registry"
+      - " mkdir -p registry/certs"
+      - ' openssl req -x509 -newkey rsa:4096 -days 365 -nodes -sha256 -keyout registry/certs/tls.key -out registry/certs/tls.crt -subj "/CN=docker-registry" -addext "subjectAltName = DNS:docker-registry"'
+      - ' mkdir -p registry/auth'   
+      - 'sudo docker run --rm --entrypoint htpasswd registry:2.6.2 -Bbn username Pa$$w0rd > registry/auth/htpasswd'
+      - 'kubectl create secret tls certs-secret --cert=registry/certs/tls.crt --key=registry/certs/tls.key'
+      - 'kubectl create secret generic auth-secret --from-file=registry/auth/htpasswd'
+      - 'kubectl create -f /vagrant/docker-registry/repository-volume.yaml'
+      - 'kubectl create -f /vagrant/docker-registry/docker-registry-pod.yaml'
+
+  - name: Update /etc/hosts
+    shell: "{{ item}}"
+    with_items:
+      - "echo '10.96.10.10 docker-registry' >> /etc/hosts"
+      - "mkdir -p /etc/docker/certs.d/docker-registry:5000"
+      - "cp registry/certs/tls.crt /etc/docker/certs.d/docker-registry:5000/ca.crt"
+
+  #- name: Create directories for TLS certificates
+  #  become: false
+  #  shell: "{{ item}}"
+  #  with_items:
+  #    - "sudo docker login docker-registry:5000 -u username -p Pa$$w0rd"
+  #    - "kubectl create secret docker-registry reg-cred-secret --docker-server=docker-registry:5000 --docker-username=username --docker-password=Pa$$w0rd"

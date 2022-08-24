@@ -14,6 +14,7 @@ Vagrant.configure("2") do |config|
 
 # we will use this to pass the join command from master to the nodes
   config.vm.synced_folder ".", "/vagrant", disabled: false   
+  config.vm.synced_folder ".ansible/registry", "/registry", disabled: false, create: true
 
 # disable automatic box update checking
 config.vbguest.no_install = true
