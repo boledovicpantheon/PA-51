@@ -36,5 +36,13 @@
   become: true
   gather_facts: false
   roles:
-    - role: docker-registry
-      tags: docker-registry
+    - role: registry
+      tags: registry
+
+- name: Docker Registry setup
+  hosts: cluster
+  become: true
+  gather_facts: false
+  roles:
+    - role: registry-config
+      tags: registry-config

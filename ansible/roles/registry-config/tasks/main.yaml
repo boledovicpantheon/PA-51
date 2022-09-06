@@ -1,0 +1,30 @@
+---
+
+- name: Add "insecure-registries" entry to daemon.json config file
+  ansible.builtin.lineinfile:
+    path: /etc/docker/daemon.json
+    line: { "insecure-registries" : ["192.168.56.11", "localhost"] }
+    create: yes
+    
+- name: Updating resolved.conf
+  lineinfile:
+    dest: /etc/resolv.conf
+    line: "{{ item.name }} {{ item.ip }}"
+  with_items:
+    - { ip: "192.168.56.11", name: "docker-registry" }
+
+- name: copy 2/4
+  ansible.builtin.file:
+    path: /etc/docker/certs.d/docker-registry:5000/
+    state: directory
+    recurse: yes
+
+- name: copy certs
+  ansible.builtin.copy:
+    src: /vagrant/registry/certs/registry.crt
+    dest: /etc/docker/certs.d/docker-registry:5000/ca.crt
+
+- name: Restart docker, also do daemon-reload
+  ansible.builtin.service:
+    name: docker
+    state: restarted

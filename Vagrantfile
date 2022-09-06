@@ -26,7 +26,7 @@ Vagrant.configure("2") do |config|
 
     node.vm.provider "virtualbox" do |v| 
       v.memory = 1024
-      v.cpus = 1
+      v.cpus = 2
       v.name = "node-#{i}"
     end
   end
@@ -42,7 +42,7 @@ end
     
       master.vm.provider "virtualbox" do |v| 
         v.memory = 2048
-        v.cpus = 2
+        v.cpus = 4
         v.name = "master-#{i}"
       end
 

@@ -1,9 +1,4 @@
 ---
-- name: Add "insecure-registries" entry to daemon.json config file
-  ansible.builtin.lineinfile:
-    path: /etc/docker/daemon.json
-    line: { "insecure-registries" : ["192.168.56.11", "localhost"] }
-    create: yes
 
 - name: Generate an OpenSSL private key
   openssl_privatekey:
@@ -21,12 +16,13 @@
     organization_name: pantheon.tech
     email_address: maros.boledovic@pantheon.tech
     common_name: docker-registry
-    subject_alt_name: IP:192.168.56.11
-    
+    subject_alt_name: 'IP:192.168.56.11,DNS:docker-registry'
+
 - name: Generate a Self Signed OpenSSL certificate
   openssl_certificate:
     path: /vagrant/registry/certs/registry.crt
     privatekey_path: /vagrant/registry/certs/registry.key
+    csr_path: /vagrant/registry/certs/registry.csr
     provider: selfsigned
     owner: vagrant
     group: vagrant

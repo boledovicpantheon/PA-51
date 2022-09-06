@@ -24,7 +24,7 @@
 
 - name: Wait till all pods with namespace metallb-system are ready.
   become: false
-  shell: kubectl wait pods --for condition=Ready -n metallb-system --all --timeout=300s
+  shell: kubectl wait pods --for condition=Ready -n metallb-system --all --timeout=900s
 
 # Install ingress-nginx controller
 - name: Deploy ingress-nginx chart 
@@ -42,7 +42,7 @@
 - name: Deploy IP address pool for metalLB 
   become: false
   shell: kubectl create -f /vagrant/deployment/addressPool.yaml
-  
+
 # Deploy test deployment with 3 replicas of nginx pod
 - name: Deploy deployment.yaml
   become: false

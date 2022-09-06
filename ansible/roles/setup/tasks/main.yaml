@@ -40,7 +40,7 @@
     - { ip: "192.168.56.101", name: "node-1"          }
     - { ip: "192.168.56.102", name: "node-2"          }
 #    - { ip: "192.168.56.103", name: "node-3"          }
-#    - { ip: "192.168.56.11", name: "docker-registry" }
+    - { ip: "192.168.56.11", name: "docker-registry" }
 
 - name: Setting DNS server address to 8.8.8.8 
   lineinfile:
@@ -186,7 +186,7 @@
 - name: Add vagrant user to docker group
   user:
     name: vagrant
-    group: docker
+    groups: docker
     append: yes
 
 # RunC installation
