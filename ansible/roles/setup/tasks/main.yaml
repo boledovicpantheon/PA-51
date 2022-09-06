@@ -1,7 +1,7 @@
 ---
 # Doing this preventively because it can collide with our apt-get tasks
-- name: Stop apt-daily 
-  service:
+- name: Stop apt-daily
+  ansible.builtin.service:
     name: "{{ item }}"
     state: stopped
   with_items:
@@ -13,20 +13,13 @@
   shell: export DEBIAN_FRONTEND=noninteractive
 
 # Full system upgrade
-- name: Running apt-get upgrade 
-  apt: 
+- name: Running apt-get upgrade
+  ansible.builtin.apt:
     upgrade: full
 
 - name: Running apt-get dist-upgrade
-  apt: 
+  ansible.builtin.apt:
     upgrade: dist
-
-# Network configuration
-- name: Removing ubuntu-jammy entry in /etc/hosts
-  lineinfile:
-    path: /etc/hosts
-    regexp: '(^.*ubuntu-jammy.*)'
-    state: absent
 
 - name: Updating /etc/hosts file with $HOSTNAME entry
   shell: ADDRESS="$(ip -4 addr show $1 | grep "inet" | head -1 |awk '{print $2}' | cut -d/ -f1)" && sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
@@ -40,21 +33,22 @@
     - { ip: "192.168.56.101", name: "node-1"          }
     - { ip: "192.168.56.102", name: "node-2"          }
 #    - { ip: "192.168.56.103", name: "node-3"          }
-    - { ip: "192.168.56.11", name: "docker-registry" }
 
-- name: Setting DNS server address to 8.8.8.8 
+- name: Setting DNS server address to 8.8.8.8
   lineinfile:
     path: /etc/systemd/resolved.conf
-    regexp: "#DNS=" 
+    regexp: "#DNS="
     line: "DNS=8.8.8.8"
     state: present
 
+# Restart systemd-resolved to apply changes
 - name: Restart systemd-resolved
   ansible.builtin.systemd:
     state: restarted
     daemon_reload: yes
-    name: systemd-resolved  
-    
+    name: systemd-resolved
+
+# Disable Firewall
 - name: Disable UFW
   community.general.ufw:
     state: disabled
@@ -66,49 +60,9 @@
     line: 'vagrant ALL=(ALL) NOPASSWD: ALL'
     validate: 'visudo -cf %s'
 
-# Disable swap
-- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
-  shell: swapoff -a && rm /swap.img
-
-- name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
-  replace:
-    path: /etc/fstab
-    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
-    replace: '# \1'
-
-# Kernel configuration
-- name: Add the br_netfilter and overlay modules
-  community.general.modprobe:
-    name: "{{ item }}" 
-    state: present
-  with_items:
-    - "br_netfilter"
-    - "overlay"
-
-- name: Enable kernel modules
-  lineinfile:
-    dest: /etc/modules-load.d/k8s.conf
-    create: yes
-    line: "{{ item }}"
-  with_items:
-    - "br_netfilter"
-    - "overlay"
-    
-- name: Add kernel modules
-  ansible.posix.sysctl:
-    name: "{{ item }}"
-    value: '1'
-    sysctl_set: yes
-    state: present
-    reload: yes
-  with_items:
-    - "net.bridge.bridge-nf-call-ip6tables"
-    - "net.bridge.bridge-nf-call-iptables"
-    - "net.ipv4.ip_forward"
-
 # Installation of basic packages
-- name: Install basic packages 
-  apt:
+- name: Install basic apt-get packages
+  ansible.builtin.apt:
     force_apt_get: yes
     name: "{{ item }}"
     state: present
@@ -119,121 +73,5 @@
   - ca-certificates
   - curl
   - gnupg-agent
-  - software-properties-common   
+  - software-properties-common
   - pip
-  - apache2-utils
-
-- name: Install basic packages through pip
-  pip:
-    name:
-    - openshift
-    - pyyaml
-    - kubernetes
-    - passlib
-    - docker
-    - cryptography
-
-# Adding GPG keys and repositories  
-- name: Add an apt signing keys
-  apt_key:
-    url: "{{ item }}"
-    state: present
-  with_items:
-  - "https://download.docker.com/linux/ubuntu/gpg" # docker
-  - "https://packages.cloud.google.com/apt/doc/apt-key.gpg" # kubernetes
-  - "https://baltocdn.com/helm/signing.asc" # helm
-
-- name: Adding apt repositories
-  apt_repository:
-    repo: "{{ item }}"
-    state: present
-  with_items:
-  - "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable" # docker
-  - "deb http://packages.cloud.google.com/apt/ kubernetes-xenial main" # kubernetes https://apt.kubernetes.io/ kubernetes-xenial main
-  - "deb https://baltocdn.com/helm/stable/debian/ all main" # helm
-
-# Docker installation
-- name: Install docker and its dependecies
-  apt: 
-    force_apt_get: yes
-    name: "{{ packages }}"
-    state: present
-    update_cache: yes
-  vars:
-    packages:
-    - docker-ce 
-    - docker-ce-cli 
-    - containerd.io
-    - docker-compose
-
-- name: Configure the Docker daemon in particular to use systemd for the management of the containers cgroups.
-  lineinfile:
-    dest: /etc/docker/daemon.json
-    line: '{ "exec-opts": ["native.cgroupdriver=systemd"], "log-driver": "json-file", "log-opts": { "max-size": "200m" }, "storage-driver": "overlay2" }'
-    create: yes
-
-- name: Enable docker serivce
-  ansible.builtin.service:
-    name: docker
-    enabled: yes
-
-- name: Restart docker, also do daemon-reload
-  ansible.builtin.service:
-    name: docker
-    state: restarted
-    daemon_reload: true
-
-- name: Add vagrant user to docker group
-  user:
-    name: vagrant
-    groups: docker
-    append: yes
-
-# RunC installation
-- name: Install RunC and create default settings for containerd
-  shell: '{{ item }}'
-  with_items: 
-  - wget https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64
-  - sudo install -m 755 runc.amd64 /usr/local/sbin/runc && rm runc.amd64
-  - mkdir -p /etc/containerd && containerd config default>/etc/containerd/config.toml
-
-- name: SystemdCgroup = true
-  lineinfile:
-    dest: /etc/containerd/config.toml
-    regexp: 'SystemdCgroup = false'
-    line: 'SystemdCgroup = true'
-
-- name: Restart containerd, also do daemon-reload
-  ansible.builtin.service:
-    name: containerd
-    state: restarted
-    daemon_reload: true
-
-# Kubernetes Installation
-- name: Install Kubernetes binaries
-  apt: 
-    force_apt_get: yes
-    name: "{{ packages }}"
-    state: present
-    update_cache: yes
-  vars:
-    packages:
-      - kubelet=1.24.4-00 # downloading version 1.24.x because in 1.25 PodSecurityPolicy is removed and MetalLB haven't implemented alternative yet.
-      - kubeadm=1.24.4-00 
-      - kubectl=1.24.4-00
-
-- name: Restart kubelet
-  ansible.builtin.service:
-    name: kubelet
-    state: restarted
-
-# Helm Installation
-- name: Install Helm
-  apt: 
-    force_apt_get: yes
-    name: helm
-    state: present
-    update_cache: yes
-
-
-

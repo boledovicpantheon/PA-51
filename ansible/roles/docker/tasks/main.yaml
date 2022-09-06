@@ -1,0 +1,81 @@
+---
+# Add repo and GPG key 
+- name: Add an apt signing keys for Docker
+  apt_key:
+    url: "{{ item }}"
+    state: present
+  with_items:
+  - "https://download.docker.com/linux/ubuntu/gpg"
+
+- name: Add an apt repository for Docker
+  apt_repository:
+    repo: "{{ item }}"
+    state: present
+  with_items:
+  - "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+
+# Docker Installation
+- name: Install docker and its dependecies
+  ansible.builtin.apt:
+    force_apt_get: yes
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - docker-compose
+
+# Docker Python library
+- name: Install Docker Python library
+  pip:
+    name:
+    - docker
+
+# Docker daemon config
+- name: Configure the Docker daemon in particular to use systemd for the management of the containers cgroups.
+  lineinfile:
+    dest: /etc/docker/daemon.json
+    line: '{ "exec-opts": ["native.cgroupdriver=systemd"], "log-driver": "json-file", "log-opts": { "max-size": "200m" }, "storage-driver": "overlay2" }'
+    create: yes
+
+- name: Enable docker serivce
+  ansible.builtin.service:
+    name: docker
+    enabled: yes
+
+- name: Restart docker, also do daemon-reload
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+    daemon_reload: true
+
+# Add user to docker group so we can use docker commands without sudo
+- name: Add vagrant user to docker group
+  user:
+    name: vagrant
+    groups: docker
+    append: yes
+
+# RunC installation
+- name: Install RunC and create default settings for containerd
+  shell: '{{ item }}'
+  with_items:
+  - wget https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64
+  - sudo install -m 755 runc.amd64 /usr/local/sbin/runc && rm runc.amd64
+  - mkdir -p /etc/containerd && containerd config default>/etc/containerd/config.toml
+
+- name: SystemdCgroup = true
+  lineinfile:
+    dest: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    line: 'SystemdCgroup = true'
+
+# Restart Containerd to apply changes
+- name: Restart containerd, also do daemon-reload
+  ansible.builtin.service:
+    name: containerd
+    state: restarted
+    daemon_reload: true

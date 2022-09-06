@@ -1,0 +1,52 @@
+---
+# Add helm chart repository for Helm
+- name: Add MetalLB helm chart repo
+  become: false
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+  with_items:
+    - { name: metallb, url: https://metallb.github.io/metallb }
+
+# Pre-install config
+- name: Modify kube-proxy config file to enable strict ARP so we can use MetalLB properly
+  become: false
+  shell: "kubectl get configmap kube-proxy -n kube-system -o yaml | sed -e 's/strictARP: false/strictARP: true/' | kubectl apply -f - -n kube-system"
+
+# Install Helm
+- name: Deploy MetalLB chart
+  become: false
+  kubernetes.core.helm:
+    name: metallb
+    chart_ref: metallb/metallb
+    release_namespace: metallb-system
+    create_namespace: true
+
+# Waiting till all nodes reach status 'Ready' to continue.
+- name: Wait till all pods with namespace metallb-system are ready.
+  become: false
+  shell: kubectl wait pods --for condition=Ready -n metallb-system --all --timeout=900s && sleep 10
+
+# This Deployment will asign selected range of IP addresses to the kubernetes services
+- name: Create IPAddressPool deployment
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: metallb.io/v1beta1
+      kind: IPAddressPool
+      metadata:
+        name: metallb-addresspool
+        namespace: metallb-system
+      spec:
+        addresses:
+        - 192.168.56.240-192.168.56.254 # range of IP adresses that will be assigned to the services
+
+- name: Create L2Advertisement deployment
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: metallb.io/v1beta1
+      kind: L2Advertisement
+      metadata:
+        name: metallb-advertisement
+        namespace: metallb-system

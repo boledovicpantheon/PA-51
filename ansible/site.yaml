@@ -7,7 +7,39 @@
     - role: setup
       tags: setup
 
-- name: Initialization of Kubernetes cluster on master node
+- name: Docker install
+  hosts: cluster
+  become: true
+  gather_facts: false
+  roles:
+    - role: docker
+      tags: docker
+
+- name: Docker-Registry install
+  hosts: master
+  become: true
+  gather_facts: false
+  roles:
+    - role: docker-registry
+      tags: docker-reg
+
+- name: Set-up Docker-Registry
+  hosts: master
+  become: true
+  gather_facts: false
+  roles:
+    - role: docker-registry-config
+      tags: reg-config
+
+- name: Kubernetes install
+  hosts: cluster
+  become: true
+  gather_facts: false
+  roles:
+    - role: k8s
+      tags: k8s
+
+- name: Initialize cluster 
   hosts: master
   become: true
   gather_facts: false
@@ -15,7 +47,7 @@
     - role: cluster-init
       tags: cluster-init
 
-- name: Joining nodes to cluster
+- name: Join nodes to the cluster
   hosts: nodes
   become: true
   gather_facts: false
@@ -23,26 +55,19 @@
     - role: cluster-join
       tags: cluster-join
 
-- name: Final cluster configuration
+- name: Install MetalLB load balancer on master node
   hosts: master
   become: true
   gather_facts: false
   roles:
-    - role: cluster-config
-      tags: cluster-config
+    - role: metallb
+      tags: metallb
 
-- name: Docker Registry setup
+- name: Install ingress-nginx controller on master node
   hosts: master
   become: true
   gather_facts: false
   roles:
-    - role: registry
-      tags: registry
+    - role: ingress-nginx
+      tags: ingress-nginx
 
-- name: Docker Registry setup
-  hosts: cluster
-  become: true
-  gather_facts: false
-  roles:
-    - role: registry-config
-      tags: registry-config

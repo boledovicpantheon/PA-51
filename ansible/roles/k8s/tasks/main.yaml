@@ -1,0 +1,98 @@
+---
+# Disable SWAP
+- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
+  shell: swapoff -a && rm /swap.img
+
+- name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
+# Adding kernel modules 
+- name: Add the br_netfilter and overlay modules
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "br_netfilter"
+    - "overlay"
+
+- name: Enable kernel modules
+  lineinfile:
+    dest: /etc/modules-load.d/k8s.conf
+    create: yes
+    line: "{{ item }}"
+  with_items:
+    - "br_netfilter"
+    - "overlay"
+
+- name: Change systcl settings
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: '1'
+    sysctl_set: yes
+    state: present
+    reload: yes
+  with_items:
+    - "net.bridge.bridge-nf-call-ip6tables"
+    - "net.bridge.bridge-nf-call-iptables"
+    - "net.ipv4.ip_forward"
+
+# Install required Python libraries
+- name: Install python libraries
+  pip:
+    name:
+    - pyyaml
+    - kubernetes
+
+# Adding repo and GPG key
+- name: Add an apt signing key for Kubernetes
+  ansible.builtin.apt_key:
+    url: "{{ item }}"
+    state: present
+  with_items:
+  - "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+
+- name: Add apt repository for Kubernetes
+  ansible.builtin.apt_repository:
+    repo: "{{ item }}"
+    state: present
+  with_items:
+  - "deb http://packages.cloud.google.com/apt/ kubernetes-xenial main"
+
+# Installation
+- name: Install Kubernetes binaries
+  ansible.builtin.apt:
+    force_apt_get: yes
+    name: "{{ packages }}"
+    state: present
+    update_cache: yes
+  vars:
+    packages:
+      - kubelet=1.24.4-00 # downloading version 1.24.x because in v1.25 PodSecurityPolicy is removed and MetalLB haven't implemented alternative yet.
+      - kubeadm=1.24.4-00
+      - kubectl=1.24.4-00
+
+# Add repo and GPG key for helm
+- name: Add an apt signing key for Helm
+  ansible.builtin.apt_key:
+    url: "{{ item }}"
+    state: present
+  with_items:
+  - "https://baltocdn.com/helm/signing.asc"
+
+- name: Add apt repository for Helm
+  ansible.builtin.apt_repository:
+    repo: "{{ item }}"
+    state: present
+  with_items:
+  - "deb https://baltocdn.com/helm/stable/debian/ all main"
+
+# Helm installation
+- name: Install Helm
+  ansible.builtin.apt:
+    force_apt_get: yes
+    name: helm
+    state: present
+    update_cache: yes
