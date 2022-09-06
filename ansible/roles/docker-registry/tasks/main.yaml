@@ -1,0 +1,115 @@
+---
+- name: Add "insecure-registries" entry to daemon.json config file
+  ansible.builtin.lineinfile:
+    path: /etc/docker/daemon.json
+    line: { "insecure-registries" : ["192.168.56.11", "localhost"] }
+    create: yes
+
+- name: Generate an OpenSSL private key
+  openssl_privatekey:
+    state: present
+    path: /vagrant/registry/certs/registry.key
+    type: RSA
+    size: 4096
+    owner: vagrant
+    group: vagrant
+
+- name: Generate an OpenSSL Certificate Signing Request with Subject information
+  openssl_csr:
+    path: /vagrant/registry/certs/registry.csr
+    privatekey_path: /vagrant/registry/certs/registry.key
+    organization_name: pantheon.tech
+    email_address: maros.boledovic@pantheon.tech
+    common_name: docker-registry
+    subject_alt_name: IP:192.168.56.11
+    
+- name: Generate a Self Signed OpenSSL certificate
+  openssl_certificate:
+    path: /vagrant/registry/certs/registry.crt
+    privatekey_path: /vagrant/registry/certs/registry.key
+    provider: selfsigned
+    owner: vagrant
+    group: vagrant
+
+# Authentication file for docker registry 
+- name: Generate htpasswd file
+  community.general.htpasswd:
+    path: /vagrant/registry/auth/htpasswd
+    name: user
+    password: password
+    crypt_scheme: bcrypt
+
+- name: Run docker-compose
+  community.docker.docker_compose:
+    state: present
+    project_src: /vagrant/registry/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Node Label
+#- name: Label master node as node-type=master
+#  become: false
+#  shell: kubectl label nodes master-1 node-type=master
+#
+
+#
+#- shell: htpasswd -Bbn exampleuser examplepassword > /vagrant/registry/auth/htpasswd
+#
+#- name: Deploy PersistentVolume & PersistentVolumeClaim
+#  become: false
+#  shell: kubectl apply -f /vagrant/deployment/pvc.yaml
+#
+## Install Docker registry
+#- name: Deploy Docker registry chart 
+#  become: false
+#  kubernetes.core.helm:
+#    name: docker-registry
+#    chart_ref: twuni/docker-registry
+#    release_namespace: docker-registry
+#    create_namespace: true
+#    values:
+#      replicaCount: 1
+#      persistence:
+#        enabled: true
+#        size: 2Gi
+#        deleteEnabled: true
+#        storageClass: docker-registry-storage
+#        existingClaim: docker-repo-pvc
+#      secrets:
+#        htpasswd: /vagrant/htpasswd
+#      service:
+#        type: LoadBalancer
+#        loadBalancerIP: 192.168.56.250
+#      nodeSelector: 
+#        node-type: master

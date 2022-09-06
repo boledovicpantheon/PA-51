@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+
+  docker-registry:
+    container_name: docker-registry
+    image: registry:latest
+    restart: unless-stopped
+    volumes:
+      - /registry-data:/var/lib/registry
+      - /vagrant/registry/certs:/certs/
+      - /vagrant/registry/auth:/auth/
+    environment:
+      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
+      REGISTRY_HTTP_TLS_KEY: /certs/registry.key
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    ports:
+    - 5000:5000

@@ -1,0 +1,51 @@
+---
+# Pull containers and initialize Kubernetes cluster
+- name: Pull required containers
+  shell: kubeadm config images pull
+
+- name: Initialize kubernetes cluster
+  shell: kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 
+
+# Setup kubeconfig for vagrant user
+- name: Setup kubeconfig for vagrant user 1/4
+  ansible.builtin.file:
+    path: /home/vagrant/.kube
+    state: directory
+
+- name: Setup kubeconfig for vagrant user 2/4
+  shell: sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+  
+- name: Setup kubeconfig for vagrant user 3/4
+  ansible.builtin.file:
+    path: /home/vagrant/.kube/config
+    owner: vagrant
+    group: vagrant    
+  
+- name: Setup kubeconfig for vagrant user 4/4
+  shell: export KUBECONFIG=/home/vagrant/.kube/config
+
+# Generate and copy join command 
+- name: Generate join command
+  shell: kubeadm token create --print-join-command
+  register: join_command
+
+- name: Copy join command to local file
+  local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+  
+# Add helm repositories
+- name: Add helm repositories
+  become: false
+  kubernetes.core.helm_repository:
+    name: "{{ item.name }}"
+    repo_url: "{{ item.url }}"
+  with_items: 
+  - { name: projectcalico, url: https://projectcalico.docs.tigera.io/charts } # calico
+
+# Install Calico pod network
+- name: Deploy Calico chart 
+  become: false
+  kubernetes.core.helm:
+    name: calico
+    chart_ref: projectcalico/tigera-operator
+    release_namespace: tigera-operator
+    create_namespace: true

@@ -1,0 +1,40 @@
+---
+- name: Initial configuration and installation.
+  hosts: cluster
+  become: true
+  gather_facts: false
+  roles:
+    - role: setup
+      tags: setup
+
+- name: Initialization of Kubernetes cluster on master node
+  hosts: master
+  become: true
+  gather_facts: false
+  roles:
+    - role: cluster-init
+      tags: cluster-init
+
+- name: Joining nodes to cluster
+  hosts: nodes
+  become: true
+  gather_facts: false
+  roles:
+    - role: cluster-join
+      tags: cluster-join
+
+- name: Final cluster configuration
+  hosts: master
+  become: true
+  gather_facts: false
+  roles:
+    - role: cluster-config
+      tags: cluster-config
+
+- name: Docker Registry setup
+  hosts: master
+  become: true
+  gather_facts: false
+  roles:
+    - role: docker-registry
+      tags: docker-registry
