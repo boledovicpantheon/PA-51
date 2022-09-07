@@ -1,14 +1,14 @@
 ---
 # Add repo and GPG key 
 - name: Add an apt signing keys for Docker
-  apt_key:
+  ansible.builtin.apt_key:
     url: "{{ item }}"
     state: present
   with_items:
   - "https://download.docker.com/linux/ubuntu/gpg"
 
 - name: Add an apt repository for Docker
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: "{{ item }}"
     state: present
   with_items:
@@ -18,11 +18,10 @@
 - name: Install docker and its dependecies
   ansible.builtin.apt:
     force_apt_get: yes
-    name: "{{ packages }}"
+    name: "{{ item }}"
     state: present
     update_cache: yes
-  vars:
-    packages:
+  with_items: 
     - docker-ce
     - docker-ce-cli
     - containerd.io
@@ -30,13 +29,13 @@
 
 # Docker Python library
 - name: Install Docker Python library
-  pip:
+  ansible.builtin.pip:
     name:
     - docker
 
 # Docker daemon config
 - name: Configure the Docker daemon in particular to use systemd for the management of the containers cgroups.
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/docker/daemon.json
     line: '{ "exec-opts": ["native.cgroupdriver=systemd"], "log-driver": "json-file", "log-opts": { "max-size": "200m" }, "storage-driver": "overlay2" }'
     create: yes
@@ -54,21 +53,33 @@
 
 # Add user to docker group so we can use docker commands without sudo
 - name: Add vagrant user to docker group
-  user:
+  ansible.builtin.user:
     name: vagrant
     groups: docker
     append: yes
 
 # RunC installation
-- name: Install RunC and create default settings for containerd
-  shell: '{{ item }}'
-  with_items:
-  - wget https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64
-  - sudo install -m 755 runc.amd64 /usr/local/sbin/runc && rm runc.amd64
-  - mkdir -p /etc/containerd && containerd config default>/etc/containerd/config.toml
+- name: Download RunC
+  ansible.builtin.get_url:
+    url: https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64
+    dest: /tmp/runc.amd64
+
+- name: Copy RunC to /usr/local/sbin/
+  ansible.builtin.copy:
+    src: /tmp/runc.amd64
+    dest: /usr/local/sbin/runc
+    mode: '0755'
+
+- name: Create a directory for containerd default config
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+
+- name: Generatate Containerd default config and push it to the config.toml file
+  ansible.builtin.shell: containerd config default>/etc/containerd/config.toml
 
 - name: SystemdCgroup = true
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/containerd/config.toml
     regexp: 'SystemdCgroup = false'
     line: 'SystemdCgroup = true'

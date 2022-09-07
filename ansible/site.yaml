@@ -1,5 +1,5 @@
 ---
-- name: Initial configuration and installation.
+- name: Initial configuration and installation
   hosts: cluster
   become: true
   gather_facts: false

@@ -31,7 +31,7 @@
 
 - name: Copy certificates
   ansible.builtin.copy:
-    remote_src: /vagrant/registry/certs/registry.crt
+    src: /vagrant/registry/certs/registry.crt
     dest: /etc/docker/certs.d/docker-registry:5000/ca.crt
 
 # Restart docker to apply changes

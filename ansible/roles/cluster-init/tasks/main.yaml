@@ -1,10 +1,10 @@
 ---
 # Pull containers and initialize Kubernetes cluster
 - name: Pull required containers
-  shell: kubeadm config images pull
+  ansible.builtin.shell: kubeadm config images pull
 
 - name: Initialize kubernetes cluster
-  shell: kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 
+  ansible.builtin.shell: kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 
 
 # Setup kubeconfig for vagrant user
 - name: Setup kubeconfig for vagrant user 1/4
@@ -13,7 +13,7 @@
     state: directory
 
 - name: Setup kubeconfig for vagrant user 2/4
-  shell: sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+  ansible.builtin.shell: sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config # when i use ansible.builtin.copy module it fails.
 
 - name: Setup kubeconfig for vagrant user 3/4
   ansible.builtin.file:
@@ -22,11 +22,11 @@
     group: vagrant
 
 - name: Setup kubeconfig for vagrant user 4/4
-  shell: export KUBECONFIG=/home/vagrant/.kube/config
+  ansible.builtin.shell: export KUBECONFIG=/home/vagrant/.kube/config
 
 # Generate and copy join command 
 - name: Generate join command
-  shell: kubeadm token create --print-join-command
+  ansible.builtin.shell: kubeadm token create --print-join-command
   register: join_command
 
 - name: Copy join command to local file

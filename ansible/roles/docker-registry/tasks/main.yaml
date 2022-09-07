@@ -15,9 +15,17 @@
   with_items:
   - apache2-utils
 
+- name: Create auth and certs directories if they do not exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  with_items: 
+  - "/vagrant/auth"
+  - "/vagrant/certs"
+
 # Generating SSL private key
 - name: Generate an OpenSSL private key
-  openssl_privatekey:
+  community.crypto.openssl_privatekey:
     state: present
     path: /vagrant/certs/registry.key
     type: RSA
@@ -27,7 +35,7 @@
 
 # Generating certificate signing request
 - name: Generate an OpenSSL Certificate Signing Request with Subject information
-  openssl_csr:
+  community.crypto.openssl_csr:
     path: /vagrant/certs/registry.csr
     privatekey_path: /vagrant/certs/registry.key
     organization_name: pantheon.tech
@@ -39,7 +47,7 @@
 
 # Generating self-signed SSL certificate
 - name: Generate a Self Signed OpenSSL certificate
-  openssl_certificate:
+  community.crypto.x509_certificate:
     path: /vagrant/certs/registry.crt
     privatekey_path: /vagrant/certs/registry.key
     csr_path: /vagrant/certs/registry.csr

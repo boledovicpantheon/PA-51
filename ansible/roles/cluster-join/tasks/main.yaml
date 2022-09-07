@@ -1,7 +1,10 @@
 ---
 # Copy join command that we generated in 'cluster-init' ansible role and execute it
 - name: Copy the join command to server location
-  copy: src=./join-command dest=/tmp/join-command.sh mode=0777
+  ansible.builtin.copy: 
+    src: ./join-command 
+    dest: /tmp/join-command.sh 
+    mode: '0777'
 
 - name: Join the node to cluster
-  shell: sh /tmp/join-command.sh
+  ansible.builtin.shell: sh /tmp/join-command.sh
