@@ -49,3 +49,7 @@
     chart_ref: projectcalico/tigera-operator
     release_namespace: tigera-operator
     create_namespace: true
+
+- name: Create k8s secret with docker-registry login credentials
+  become: false
+  ansible.builtin.shell: kubectl create secret docker-registry regsecret --docker-server=docker-registry --docker-username=user --docker-password=password

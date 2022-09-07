@@ -1,13 +1,13 @@
 ---
 # Install required python libraries and htpasswd
 - name: Install Python libraries
-  pip:
+  ansible.builtin.pip:
     name:
     - passlib
     - cryptography
 
 - name: Install htpasswd
-  apt:
+  ansible.builtin.apt:
     force_apt_get: yes
     name: "{{ item }}"
     state: present
@@ -85,4 +85,3 @@
             REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
           ports:
           - 5000:5000
-

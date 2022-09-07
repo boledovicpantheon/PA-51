@@ -25,10 +25,16 @@
 # Waiting till all nodes reach status 'Ready' to continue.
 - name: Wait till all pods with namespace metallb-system are ready.
   become: false
-  shell: kubectl wait pods --for condition=Ready -n metallb-system --all --timeout=900s && sleep 10
+  ansible.builtin.shell: kubectl wait pods --for condition=Ready -n metallb-system --all --timeout=900s && sleep 10
+
+# If this is not deleted, we cant deploy IPAddressPool, etc.
+- name: Delete ValidatingWebhookConfiguration for metallb
+  become: false
+  ansible.builtin.shell: kubectl delete -A ValidatingWebhookConfiguration metallb-webhook-configuration
 
 # This Deployment will asign selected range of IP addresses to the kubernetes services
 - name: Create IPAddressPool deployment
+  become: false
   kubernetes.core.k8s:
     state: present
     definition:
@@ -42,6 +48,7 @@
         - 192.168.56.240-192.168.56.254 # range of IP adresses that will be assigned to the services
 
 - name: Create L2Advertisement deployment
+  become: false
   kubernetes.core.k8s:
     state: present
     definition:
@@ -50,3 +57,9 @@
       metadata:
         name: metallb-advertisement
         namespace: metallb-system
+
+#- name: Create IPAddressPool
+#  become: false
+#  kubernetes.core.k8s:
+#    state: present
+#    src: /vagrant/ansible/roles/metallb/templates/metallb.yaml

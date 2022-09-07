@@ -3,12 +3,12 @@
 - name: Add 'insecure-registries' entry to daemon.json config file
   ansible.builtin.lineinfile:
     path: /etc/docker/daemon.json
-    line: { "insecure-registries" : ["192.168.56.11", "docker-registry"] }
+    line: { "insecure-registries" : ["192.168.56.11", "localhost", "docker-registry"] }
     create: yes
 
 # Add entry to /etc/hosts
 - name: Pasting IP adresses of hosts and master
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
@@ -16,7 +16,7 @@
 
 # not sure if we really need this
 - name: Updating resolved.conf
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/resolv.conf
     line: "{{ item.name }} {{ item.ip }}"
   with_items:

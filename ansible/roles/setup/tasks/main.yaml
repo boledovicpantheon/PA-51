@@ -10,7 +10,7 @@
 
 # To prevent ansible freezing
 - name: Make enviroment non-interactive
-  shell: export DEBIAN_FRONTEND=noninteractive
+  ansible.builtin.shell: export DEBIAN_FRONTEND=noninteractive
 
 # Full system upgrade
 - name: Running apt-get upgrade
@@ -22,10 +22,10 @@
     upgrade: dist
 
 - name: Updating /etc/hosts file with $HOSTNAME entry
-  shell: ADDRESS="$(ip -4 addr show $1 | grep "inet" | head -1 |awk '{print $2}' | cut -d/ -f1)" && sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
+  ansible.builtin.shell: ADDRESS="$(ip -4 addr show $1 | grep "inet" | head -1 |awk '{print $2}' | cut -d/ -f1)" && sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
 
 - name: Pasting IP adresses of hosts and master
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
@@ -35,7 +35,7 @@
 #    - { ip: "192.168.56.103", name: "node-3"          }
 
 - name: Setting DNS server address to 8.8.8.8
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/systemd/resolved.conf
     regexp: "#DNS="
     line: "DNS=8.8.8.8"
@@ -55,7 +55,7 @@
 
 # Paswordless sudo  
 - name: Allow 'vagrant' to have passwordless sudo
-  lineinfile:
+  ansible.builtin.lineinfile:
     dest: /etc/sudoers
     line: 'vagrant ALL=(ALL) NOPASSWD: ALL'
     validate: 'visudo -cf %s'
