@@ -15,23 +15,7 @@
     - role: docker
       tags: docker
 
-- name: Docker-Registry install
-  hosts: master
-  become: true
-  gather_facts: false
-  roles:
-    - role: docker-registry
-      tags: docker-reg
-
-- name: Set-up Docker-Registry
-  hosts: master
-  become: true
-  gather_facts: false
-  roles:
-    - role: docker-registry-config
-      tags: reg-config
-
-- name: Kubernetes install
+- name: Kubernetes & Helm install
   hosts: cluster
   become: true
   gather_facts: false
@@ -54,6 +38,22 @@
   roles:
     - role: cluster-join
       tags: cluster-join
+
+- name: Docker-Registry install & Create SSL certificates
+  hosts: master
+  become: true
+  gather_facts: false
+  roles:
+    - role: docker-registry
+      tags: docker-reg
+
+- name: Docker-Registry certs config
+  hosts: cluster
+  become: true
+  gather_facts: false
+  roles:
+    - role: docker-registry-config
+      tags: reg-config
 
 - name: Install MetalLB load balancer on master node
   hosts: master

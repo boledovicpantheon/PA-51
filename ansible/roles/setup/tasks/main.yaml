@@ -26,6 +26,7 @@
 
 - name: Pasting IP adresses of hosts and master
   ansible.builtin.lineinfile:
+    state: present
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
@@ -36,10 +37,10 @@
 
 - name: Setting DNS server address to 8.8.8.8
   ansible.builtin.lineinfile:
+    state: present
     path: /etc/systemd/resolved.conf
     regexp: "#DNS="
     line: "DNS=8.8.8.8"
-    state: present
 
 # Restart systemd-resolved to apply changes
 - name: Restart systemd-resolved
@@ -56,6 +57,7 @@
 # Paswordless sudo  
 - name: Allow 'vagrant' to have passwordless sudo
   ansible.builtin.lineinfile:
+    state: present
     dest: /etc/sudoers
     line: 'vagrant ALL=(ALL) NOPASSWD: ALL'
     validate: 'visudo -cf %s'

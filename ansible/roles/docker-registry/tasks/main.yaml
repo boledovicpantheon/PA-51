@@ -40,8 +40,8 @@
     privatekey_path: /vagrant/certs/registry.key
     organization_name: pantheon.tech
     email_address: maros.boledovic@pantheon.tech
-    common_name: docker-registry
-    subject_alt_name: 'IP:192.168.56.11,DNS:docker-registry'
+    common_name: docker.registry.com
+    subject_alt_name: 'IP:192.168.56.11,DNS:docker.registry.com'
     owner: vagrant
     group: vagrant
 
@@ -63,18 +63,22 @@
     password: password
     crypt_scheme: bcrypt
 
+- name: Create k8s secret with docker.registry.com login credentials
+  become: false
+  ansible.builtin.shell: kubectl create secret docker-registry regsecret --docker-server=docker.registry.com --docker-username=user --docker-password=password
+
 - name: Run docker-compose up and start docker-registry service
   community.docker.docker_compose:
     project_name: docker-registry
     definition:
       version: '3'
       services:
-        docker-registry:
-          container_name: docker-registry
+        docker.registry.com:
+          container_name: docker.registry.com
           image: registry:latest
           restart: unless-stopped
           volumes:
-          - /registry-data:/var/lib/registry
+          - registry-data:/var/lib/registry
           - /vagrant/certs:/certs/
           - /vagrant/auth:/auth/
           environment:
@@ -85,3 +89,5 @@
             REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
           ports:
           - 5000:5000
+      volumes:
+        registry-data: {}

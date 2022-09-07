@@ -2,37 +2,40 @@
 # We need to tell Docker daemon that the registry it is trying to access is insecure - it is because it has self-signed certificates
 - name: Add 'insecure-registries' entry to daemon.json config file
   ansible.builtin.lineinfile:
+    state: present
     path: /etc/docker/daemon.json
-    line: { "insecure-registries" : ["192.168.56.11", "localhost", "docker-registry"] }
+    line: '{ "insecure-registries": ["192.168.56.11:5000", "docker.registry.com:5000"] }'
     create: yes
 
 # Add entry to /etc/hosts
 - name: Pasting IP adresses of hosts and master
   ansible.builtin.lineinfile:
+    state: present
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
-    - { ip: "192.168.56.11", name: "docker-registry" }
+    - { ip: "192.168.56.11", name: "docker.registry.com" }
 
 # not sure if we really need this
 - name: Updating resolved.conf
   ansible.builtin.lineinfile:
+    state: present
     dest: /etc/resolv.conf
     line: "{{ item.name }} {{ item.ip }}"
   with_items:
-    - { ip: "192.168.56.11", name: "docker-registry" }
+    - { ip: "192.168.56.11", name: "docker.registry.com" }
 
 # This way we can trick docker to think that our certificates aren't really self-signed
 - name: Create directory for copying certificates
   ansible.builtin.file:
-    path: /etc/docker/certs.d/docker-registry:5000/
+    path: /etc/docker/certs.d/docker.registry.com:5000/
     state: directory
     recurse: yes
 
 - name: Copy certificates
   ansible.builtin.copy:
     src: /vagrant/certs/registry.crt
-    dest: /etc/docker/certs.d/docker-registry:5000/ca.crt
+    dest: /etc/docker/certs.d/docker.registry.com:5000/ca.crt
     #mode: '0755'
 
 # Restart docker to apply changes

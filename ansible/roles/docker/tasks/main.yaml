@@ -36,6 +36,7 @@
 # Docker daemon config
 - name: Configure the Docker daemon in particular to use systemd for the management of the containers cgroups.
   ansible.builtin.lineinfile:
+    state: present
     dest: /etc/docker/daemon.json
     line: '{ "exec-opts": ["native.cgroupdriver=systemd"], "log-driver": "json-file", "log-opts": { "max-size": "200m" }, "storage-driver": "overlay2" }'
     create: yes
@@ -80,6 +81,7 @@
 
 - name: SystemdCgroup = true
   ansible.builtin.lineinfile:
+    state: present
     dest: /etc/containerd/config.toml
     regexp: 'SystemdCgroup = false'
     line: 'SystemdCgroup = true'
