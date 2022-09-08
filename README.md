@@ -23,4 +23,7 @@ You can access docker registry from your local machine also.
 ```docker pull docker.registry.com:5000/nginx:v1``` to verify docker registry is accesible in local network. 
 
 ### On master node
-```kubectl create -f /vagrant/deployment/test.yaml``` to test if docker registry is accesible inside cluster.
+```kubectl create -f /vagrant/deployment/test.yaml``` 
+```kubectl get pod test```
+
+to test if docker registry is accesible inside cluster.
