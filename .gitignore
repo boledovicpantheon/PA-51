@@ -1,5 +1,5 @@
 .vagrant
 .vscode
-ansible/join-command
+join-command
 box/
 certs/registry.*

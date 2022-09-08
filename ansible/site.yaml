@@ -23,7 +23,7 @@
     - role: k8s
       tags: k8s
 
-- name: Initialize cluster 
+- name: Initialize cluster
   hosts: master
   become: true
   gather_facts: false
@@ -71,10 +71,10 @@
     - role: ingress-nginx
       tags: ingress
 
-- name: Run bash script that will upload image to docker registry 
+- name: Run bash script that will upload image to docker registry
   hosts: master
   become: false
   gather_facts: false
-  tasks: 
+  tasks:
     - name: Running bash script
       ansible.builtin.shell: bash /vagrant/bash.sh

@@ -8,18 +8,16 @@
 
 - name: Install htpasswd
   ansible.builtin.apt:
-    force_apt_get: yes
-    name: "{{ item }}"
+    force_apt_get: true
+    name: apache2-utils
     state: present
-    update_cache: yes
-  with_items:
-  - apache2-utils
+    update_cache: true
 
 - name: Create auth and certs directories if they do not exist
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-  with_items: 
+  with_items:
   - "/vagrant/auth"
   - "/vagrant/certs"
 
@@ -32,6 +30,7 @@
     size: 4096
     owner: vagrant
     group: vagrant
+    mode: '0744'
 
 # Generating certificate signing request
 - name: Generate an OpenSSL Certificate Signing Request with Subject information
@@ -44,6 +43,7 @@
     subject_alt_name: 'IP:192.168.56.11,DNS:docker.registry.com'
     owner: vagrant
     group: vagrant
+    mode: '0744'
 
 # Generating self-signed SSL certificate
 - name: Generate a Self Signed OpenSSL certificate
@@ -54,8 +54,9 @@
     provider: selfsigned
     owner: vagrant
     group: vagrant
+    mode: '0744'
 
-# Authentication file for docker registry 
+# Authentication file for docker registry
 - name: Generate htpasswd file
   community.general.htpasswd:
     path: /vagrant/auth/htpasswd
@@ -65,7 +66,7 @@
 
 - name: Create k8s secret with docker.registry.com login credentials
   become: false
-  ansible.builtin.shell: kubectl create secret docker-registry regsecret --docker-server=docker.registry.com:5000 --docker-username=user --docker-password=password
+  ansible.builtin.command: kubectl create secret docker-registry regsecret --docker-server=docker.registry.com:5000 --docker-username=user --docker-password=password
 
 - name: Run docker-compose up and start docker-registry service
   community.docker.docker_compose:

@@ -1,18 +1,4 @@
 ---
-- name: Add certs to trusted in Ubuntu
-  ansible.builtin.copy:
-    src: /vagrant/certs/registry.crt
-    dest: /usr/local/share/ca-certificates
-
-- name: update-ca-certificates
-  ansible.builtin.shell: update-ca-certificates
-
-- name: restart containerd
-  ansible.builtin.service:
-    state: restarted
-    name: containerd
-    daemon-reload: yes
-
 # We need to tell Docker daemon that the registry it is trying to access is insecure
 - name: Add 'insecure-registries' entry to daemon.json config file
   ansible.builtin.replace:
@@ -32,17 +18,16 @@
   ansible.builtin.lineinfile:
     state: present
     dest: /etc/hosts
-    line: "{{ item.ip }} {{ item.name }}"
-  with_items:
-    - { ip: "192.168.56.11", name: "docker.registry.com" }
+    line: "192.168.56.11 docker.registry.com"
 
 # This way we can trick docker to think that our certificates aren't really self-signed
 - name: Create directories for copying certificates
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
-  with_items: 
+    recurse: true
+    mode: '0744'
+  with_items:
   - "/etc/docker/certs.d/docker.registry.com:5000/"
   - "/etc/containerd/certs.d/docker.registry.com:5000/"
 
@@ -50,17 +35,19 @@
   ansible.builtin.copy:
     src: /vagrant/certs/registry.crt
     dest: /etc/docker/certs.d/docker.registry.com:5000/ca.crt
+    mode: '0744'
 
 - name: Copy certificates to containerd certs.d
   ansible.builtin.copy:
     src: /vagrant/certs/hosts.toml
     dest: /etc/containerd/certs.d/docker.registry.com:5000/hosts.toml
+    mode: '0744'
 
 # Restart docker and containerd to apply changes
 - name: Restart docker and containerd, also do daemon-reload
   ansible.builtin.service:
     name: "{{ item }}"
     state: restarted
-  with_items: 
+  with_items:
   - "docker"
   - "containerd"

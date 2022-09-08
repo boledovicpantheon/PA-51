@@ -22,7 +22,9 @@
     upgrade: dist
 
 - name: Updating /etc/hosts file with $HOSTNAME entry
-  ansible.builtin.shell: ADDRESS="$(ip -4 addr show $1 | grep "inet" | head -1 |awk '{print $2}' | cut -d/ -f1)" && sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
+  ansible.builtin.shell: |
+    ADDRESS="$(ip -4 addr show $1 | grep "inet" | head -1 |awk '{print $2}' | cut -d/ -f1)" && \
+    sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
 
 - name: Pasting IP adresses of hosts and master
   ansible.builtin.lineinfile:
@@ -30,10 +32,9 @@
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
-    - { ip: "192.168.56.11",  name: "master-1"        }
-    - { ip: "192.168.56.101", name: "node-1"          }
-    - { ip: "192.168.56.102", name: "node-2"          }
-#    - { ip: "192.168.56.103", name: "node-3"          }
+    - { ip: "192.168.56.11", name: "master-1" }
+    - { ip: "192.168.56.101", name: "node-1" }
+    - { ip: "192.168.56.102", name: "node-2" }
 
 - name: Setting DNS server address to 8.8.8.8
   ansible.builtin.lineinfile:
@@ -46,7 +47,7 @@
 - name: Restart systemd-resolved
   ansible.builtin.systemd:
     state: restarted
-    daemon_reload: yes
+    daemon_reload: true
     name: systemd-resolved
 
 # Disable Firewall
@@ -54,7 +55,7 @@
   community.general.ufw:
     state: disabled
 
-# Paswordless sudo  
+# Paswordless sudo
 - name: Allow 'vagrant' to have passwordless sudo
   ansible.builtin.lineinfile:
     state: present
@@ -65,10 +66,10 @@
 # Installation of basic packages
 - name: Install basic apt-get packages
   ansible.builtin.apt:
-    force_apt_get: yes
+    force_apt_get: true
     name: "{{ item }}"
     state: present
-    update_cache: yes
+    update_cache: true
   with_items:
   - python3-apt
   - apt-transport-https

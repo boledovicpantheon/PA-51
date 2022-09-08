@@ -1,19 +1,20 @@
 ---
 # Pull containers and initialize Kubernetes cluster
 - name: Pull required containers
-  ansible.builtin.shell: kubeadm config images pull
+  ansible.builtin.command: kubeadm config images pull
 
 - name: Initialize kubernetes cluster
-  ansible.builtin.shell: kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.11 
+  ansible.builtin.command: kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=192.168.56.11
 
 # Setup kubeconfig for vagrant user
 - name: Setup kubeconfig for vagrant user 1/4
   ansible.builtin.file:
     path: /home/vagrant/.kube
     state: directory
+    mode: '0755'
 
 - name: Setup kubeconfig for vagrant user 2/4
-  ansible.builtin.shell: sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config # when i use ansible.builtin.copy module it fails.
+  ansible.builtin.command: sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config # when i use ansible.builtin.copy module it fails.
 
 - name: Setup kubeconfig for vagrant user 3/4
   ansible.builtin.file:
@@ -22,24 +23,22 @@
     group: vagrant
 
 - name: Setup kubeconfig for vagrant user 4/4
-  ansible.builtin.shell: export KUBECONFIG=/home/vagrant/.kube/config
+  ansible.builtin.command: export KUBECONFIG=/home/vagrant/.kube/config
 
-# Generate and copy join command 
+# Generate and copy join command
 - name: Generate join command
-  ansible.builtin.shell: kubeadm token create --print-join-command
-  register: join_command
+  ansible.builtin.command: kubeadm token create --print-join-command >> /vagrant/join_command
+#   register: join_command
 
-- name: Copy join command to local file
-  local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
+# - name: Copy join command to local file
+#   local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"
 
 # Add helm repositories
 - name: Add helm repositories
   become: false
   kubernetes.core.helm_repository:
-    name: "{{ item.name }}"
-    repo_url: "{{ item.url }}"
-  with_items:
-  - { name: projectcalico, url: https://projectcalico.docs.tigera.io/charts } # calico
+    name: projectcalico
+    repo_url: https://projectcalico.docs.tigera.io/charts
 
 # Install Calico pod network
 - name: Deploy Calico chart
