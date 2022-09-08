@@ -69,5 +69,5 @@
   gather_facts: false
   roles:
     - role: ingress-nginx
-      tags: ingress-nginx
+      tags: ingress
 

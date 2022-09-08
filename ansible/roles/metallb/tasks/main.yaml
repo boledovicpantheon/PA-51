@@ -1,19 +1,19 @@
 ---
-# Add helm chart repository for Helm
+# Pre-install config
+- name: Modify kube-proxy config file to enable strict ARP so we can use MetalLB properly
+  become: false
+  ansible.builtin.shell: "kubectl get configmap kube-proxy -n kube-system -o yaml | sed -e 's/strictARP: false/strictARP: true/' | kubectl apply -f - -n kube-system"
+
+# Add helm chart repository for MetalLB
 - name: Add MetalLB helm chart repo
   become: false
-  kubernetes.core.helm_repository:
+  kubernetes.core.helm_repository:            # Error: context deadline exceeded
     name: "{{ item.name }}"
     repo_url: "{{ item.url }}"
   with_items:
     - { name: metallb, url: https://metallb.github.io/metallb }
 
-# Pre-install config
-- name: Modify kube-proxy config file to enable strict ARP so we can use MetalLB properly
-  become: false
-  shell: "kubectl get configmap kube-proxy -n kube-system -o yaml | sed -e 's/strictARP: false/strictARP: true/' | kubectl apply -f - -n kube-system"
-
-# Install Helm
+# Install MetalLB
 - name: Deploy MetalLB chart
   become: false
   kubernetes.core.helm:
@@ -57,9 +57,3 @@
       metadata:
         name: metallb-advertisement
         namespace: metallb-system
-
-#- name: Create IPAddressPool
-#  become: false
-#  kubernetes.core.k8s:
-#    state: present
-#    src: /vagrant/ansible/roles/metallb/templates/metallb.yaml

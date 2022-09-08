@@ -1,14 +1,34 @@
 ---
-# We need to tell Docker daemon that the registry it is trying to access is insecure - it is because it has self-signed certificates
+# - name: Add certs to trusted in Ubuntu
+#   ansible.builtin.copy:
+#     src: /vagrant/certs/registry.crt
+#     dest: /usr/local/share/ca-certificates
+# 
+# - name: update-ca-certificates
+#   ansible.builtin.shell: update-ca-certificates
+# 
+# - name: restart containerd
+#   ansible.builtin.service:
+#     state: restarted
+#     name: containerd
+#     daemon-reload: yes
+
+# We need to tell Docker daemon that the registry it is trying to access is insecure
 - name: Add 'insecure-registries' entry to daemon.json config file
-  ansible.builtin.lineinfile:
-    state: present
+  ansible.builtin.replace:
     path: /etc/docker/daemon.json
-    line: '{ "insecure-registries": ["192.168.56.11:5000", "docker.registry.com:5000"] }'
-    create: yes
+    regexp: ' } '
+    replace: ', "insecure-registries": ["192.168.56.11:5000", "docker.registry.com:5000"] }'
+
+- name: Add 'insecure registry' entry to containerd config file
+  ansible.builtin.lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: 'config_path = ""'
+    line: '      config_path = "/etc/containerd/certs.d"'
+    state: present
 
 # Add entry to /etc/hosts
-- name: Pasting IP adresses of hosts and master
+- name: Pasting docker.registry.com entry to /etc/hosts
   ansible.builtin.lineinfile:
     state: present
     dest: /etc/hosts
@@ -16,30 +36,31 @@
   with_items:
     - { ip: "192.168.56.11", name: "docker.registry.com" }
 
-# not sure if we really need this
-- name: Updating resolved.conf
-  ansible.builtin.lineinfile:
-    state: present
-    dest: /etc/resolv.conf
-    line: "{{ item.name }} {{ item.ip }}"
-  with_items:
-    - { ip: "192.168.56.11", name: "docker.registry.com" }
-
 # This way we can trick docker to think that our certificates aren't really self-signed
-- name: Create directory for copying certificates
+- name: Create directories for copying certificates
   ansible.builtin.file:
-    path: /etc/docker/certs.d/docker.registry.com:5000/
+    path: "{{ item }}"
     state: directory
     recurse: yes
+  with_items: 
+  - "/etc/docker/certs.d/docker.registry.com:5000/"
+  - "/etc/containerd/certs.d/docker.registry.com:5000/"
 
-- name: Copy certificates
+- name: Copy certificates to docker certs.d
   ansible.builtin.copy:
     src: /vagrant/certs/registry.crt
     dest: /etc/docker/certs.d/docker.registry.com:5000/ca.crt
-    #mode: '0755'
 
-# Restart docker to apply changes
-- name: Restart docker, also do daemon-reload
+- name: Copy certificates to containerd certs.d
+  ansible.builtin.copy:
+    src: /vagrant/certs/hosts.toml
+    dest: /etc/containerd/certs.d/docker.registry.com:5000/hosts.toml
+
+# Restart docker and containerd to apply changes
+- name: Restart docker and containerd, also do daemon-reload
   ansible.builtin.service:
-    name: docker
+    name: "{{ item }}"
     state: restarted
+  with_items: 
+  - "docker"
+  - "containerd"

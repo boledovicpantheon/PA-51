@@ -15,45 +15,45 @@
   with_items:
   - apache2-utils
 
-- name: Create auth and certs directories if they do not exist
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-  with_items: 
-  - "/vagrant/auth"
-  - "/vagrant/certs"
-
-# Generating SSL private key
-- name: Generate an OpenSSL private key
-  community.crypto.openssl_privatekey:
-    state: present
-    path: /vagrant/certs/registry.key
-    type: RSA
-    size: 4096
-    owner: vagrant
-    group: vagrant
-
-# Generating certificate signing request
-- name: Generate an OpenSSL Certificate Signing Request with Subject information
-  community.crypto.openssl_csr:
-    path: /vagrant/certs/registry.csr
-    privatekey_path: /vagrant/certs/registry.key
-    organization_name: pantheon.tech
-    email_address: maros.boledovic@pantheon.tech
-    common_name: docker.registry.com
-    subject_alt_name: 'IP:192.168.56.11,DNS:docker.registry.com'
-    owner: vagrant
-    group: vagrant
-
-# Generating self-signed SSL certificate
-- name: Generate a Self Signed OpenSSL certificate
-  community.crypto.x509_certificate:
-    path: /vagrant/certs/registry.crt
-    privatekey_path: /vagrant/certs/registry.key
-    csr_path: /vagrant/certs/registry.csr
-    provider: selfsigned
-    owner: vagrant
-    group: vagrant
+# - name: Create auth and certs directories if they do not exist
+#   ansible.builtin.file:
+#     path: "{{ item }}"
+#     state: directory
+#   with_items: 
+#   - "/vagrant/auth"
+#   - "/vagrant/certs"
+# 
+# # Generating SSL private key
+# - name: Generate an OpenSSL private key
+#   community.crypto.openssl_privatekey:
+#     state: present
+#     path: /vagrant/certs/registry.key
+#     type: RSA
+#     size: 4096
+#     owner: vagrant
+#     group: vagrant
+# 
+# # Generating certificate signing request
+# - name: Generate an OpenSSL Certificate Signing Request with Subject information
+#   community.crypto.openssl_csr:
+#     path: /vagrant/certs/registry.csr
+#     privatekey_path: /vagrant/certs/registry.key
+# #    organization_name: pantheon.tech
+# #    email_address: maros.boledovic@pantheon.tech
+#     common_name: docker.registry.com
+#     subject_alt_name: 'IP:192.168.56.11,DNS:docker.registry.com'
+#     owner: vagrant
+#     group: vagrant
+# 
+# # Generating self-signed SSL certificate
+# - name: Generate a Self Signed OpenSSL certificate
+#   community.crypto.x509_certificate:
+#     path: /vagrant/certs/registry.crt
+#     privatekey_path: /vagrant/certs/registry.key
+#     csr_path: /vagrant/certs/registry.csr
+#     provider: selfsigned
+#     owner: vagrant
+#     group: vagrant
 
 # Authentication file for docker registry 
 - name: Generate htpasswd file
@@ -63,13 +63,13 @@
     password: password
     crypt_scheme: bcrypt
 
-- name: Create k8s secret with docker.registry.com login credentials
-  become: false
-  ansible.builtin.shell: kubectl create secret docker-registry regsecret --docker-server=docker.registry.com --docker-username=user --docker-password=password
+#- name: Create k8s secret with docker.registry.com login credentials
+#  become: false
+#  ansible.builtin.shell: kubectl create secret docker-registry regsecret --docker-server=docker.registry.com --docker-username=user --docker-password=password
 
 - name: Run docker-compose up and start docker-registry service
   community.docker.docker_compose:
-    project_name: docker-registry
+    project_name: docker.registry.com
     definition:
       version: '3'
       services:
@@ -79,11 +79,11 @@
           restart: unless-stopped
           volumes:
           - registry-data:/var/lib/registry
-          - /vagrant/certs:/certs/
+#          - /vagrant/certs:/certs/
           - /vagrant/auth:/auth/
           environment:
-            REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
-            REGISTRY_HTTP_TLS_KEY: /certs/registry.key
+#            REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
+#            REGISTRY_HTTP_TLS_KEY: /certs/registry.key
             REGISTRY_AUTH: htpasswd
             REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
             REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd

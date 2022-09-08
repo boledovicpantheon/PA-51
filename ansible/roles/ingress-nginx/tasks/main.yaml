@@ -1,22 +1,21 @@
 ---
-# Add helm chart repository 
-- name: Add helm chart repository for ingress-nginx controller
-  become: false
-  kubernetes.core.helm_repository:
-    name: "{{ item.name }}"
-    repo_url: "{{ item.url }}"
-  with_items:
-    - { name: nginx-stable, url: https://helm.nginx.com/stable }
-
-# Install ingress-nginx controller
-- name: Deploy ingress-nginx chart
-  become: false
-  kubernetes.core.helm:
-    name: ingress-nginx
-    chart_ref: nginx-stable/nginx-ingress
-    release_namespace: ingress
-    create_namespace: true
-    values:
-      controller:
-        hostNetwork: true
-
+ # Add helm chart repository 
+ - name: Add helm chart repository for ingress-nginx controller
+   become: false
+   kubernetes.core.helm_repository:
+     name: "{{ item.name }}"
+     repo_url: "{{ item.url }}"
+   with_items:
+     - { name: nginx-stable, url: https://helm.nginx.com/stable }
+ 
+ # Install ingress-nginx controller
+ - name: Deploy ingress-nginx chart
+   become: false
+   kubernetes.core.helm:
+     name: ingress-nginx
+     chart_ref: nginx-stable/nginx-ingress
+     release_namespace: ingress
+     create_namespace: true
+     values:
+       controller:
+         hostNetwork: true
