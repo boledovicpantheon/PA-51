@@ -11,6 +11,7 @@ If you
 1. copy certs/registry.crt from this repository to /etc/docker/certs.d/docker.registry.com:5000/ca.crt 
 2. run ```systemctl restart docker```
 3. run ```echo "192.168.56.11 docker.registry.com" > /etc/hosts ```
+
 You can access docker registry from your local machine also.
 
 ## Testing
