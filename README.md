@@ -17,13 +17,12 @@ You can access docker registry from your local machine also.
 ## Testing
 
 ### On your local machine
-```curl myapp.example.com```  to verify ingress is running as it should.
+```curl myapp.example.com```   ...to verify ingress is running as it should.
 
 ### On any node
-```docker pull docker.registry.com:5000/nginx:v1``` to verify docker registry is accesible in local network. 
+```docker pull docker.registry.com:5000/nginx:v1```   ...to verify docker registry is accesible in local network. 
 
 ### On master node
 ```kubectl create -f /vagrant/deployment/test.yaml``` 
-```kubectl get pod test```
 
-to test if docker registry is accesible inside cluster.
+```kubectl get pod test```   ...to test if docker registry is accesible inside cluster.
