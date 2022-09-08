@@ -1,5 +1,5 @@
 ---
- # Add helm chart repository 
+ # Add helm chart repository
  - name: Add helm chart repository for ingress-nginx controller
    become: false
    kubernetes.core.helm_repository:
@@ -7,7 +7,7 @@
      repo_url: "{{ item.url }}"
    with_items:
      - { name: nginx-stable, url: https://helm.nginx.com/stable }
- 
+
  # Install ingress-nginx controller
  - name: Deploy ingress-nginx chart
    become: false

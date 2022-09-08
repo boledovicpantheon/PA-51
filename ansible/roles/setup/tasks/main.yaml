@@ -10,7 +10,7 @@
 
 # To prevent ansible freezing
 - name: Make enviroment non-interactive
-  ansible.builtin.shell: export DEBIAN_FRONTEND=noninteractive
+  ansible.builtin.command: export DEBIAN_FRONTEND=noninteractive
 
 # Full system upgrade
 - name: Running apt-get upgrade

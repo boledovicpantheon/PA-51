@@ -17,6 +17,7 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
+    mode: '0755'
   with_items:
   - "/vagrant/auth"
   - "/vagrant/certs"
@@ -63,10 +64,15 @@
     name: user
     password: password
     crypt_scheme: bcrypt
+    mode: '0744'
 
 - name: Create k8s secret with docker.registry.com login credentials
   become: false
-  ansible.builtin.command: kubectl create secret docker-registry regsecret --docker-server=docker.registry.com:5000 --docker-username=user --docker-password=password
+  ansible.builtin.command: |
+    kubectl create secret docker-registry regsecret \
+    --docker-server=docker.registry.com:5000 \
+    --docker-username=user \
+    --docker-password=password
 
 - name: Run docker-compose up and start docker-registry service
   community.docker.docker_compose:
