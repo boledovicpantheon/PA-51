@@ -1,17 +1,17 @@
 ---
-# - name: Add certs to trusted in Ubuntu
-#   ansible.builtin.copy:
-#     src: /vagrant/certs/registry.crt
-#     dest: /usr/local/share/ca-certificates
-# 
-# - name: update-ca-certificates
-#   ansible.builtin.shell: update-ca-certificates
-# 
-# - name: restart containerd
-#   ansible.builtin.service:
-#     state: restarted
-#     name: containerd
-#     daemon-reload: yes
+- name: Add certs to trusted in Ubuntu
+  ansible.builtin.copy:
+    src: /vagrant/certs/registry.crt
+    dest: /usr/local/share/ca-certificates
+
+- name: update-ca-certificates
+  ansible.builtin.shell: update-ca-certificates
+
+- name: restart containerd
+  ansible.builtin.service:
+    state: restarted
+    name: containerd
+    daemon-reload: yes
 
 # We need to tell Docker daemon that the registry it is trying to access is insecure
 - name: Add 'insecure-registries' entry to daemon.json config file

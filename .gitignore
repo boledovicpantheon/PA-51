@@ -2,4 +2,4 @@
 .vscode
 ansible/join-command
 box/
-registry/certs/*
+certs/registry.*
