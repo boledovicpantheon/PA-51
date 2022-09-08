@@ -6,7 +6,7 @@ metadata:
   labels:
     app: nginx
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: nginx
@@ -18,13 +18,15 @@ spec:
       hostNetwork: true
       containers:
       - name: nginx
-        image: nginx
+        image: docker.registry.com:5000/nginx:v1
         resources:
           limits:
             memory: "128Mi"
             cpu: "250m"
         ports:
         - containerPort: 8080
+      imagePullSecrets:
+      - name: regsecret
 ---
 apiVersion: v1
 kind: Service

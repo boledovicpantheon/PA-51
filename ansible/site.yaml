@@ -71,3 +71,10 @@
     - role: ingress-nginx
       tags: ingress
 
+- name: Run bash script that will upload image to docker registry 
+  hosts: master
+  become: false
+  gather_facts: false
+  tasks: 
+    - name: Running bash script
+      ansible.builtin.shell: bash /vagrant/bash.sh

@@ -1,0 +1,22 @@
+name: vagrant-action
+on: 
+  push:
+
+jobs:
+  vagrant:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Show Vagrant version
+        run: vagrant --version
+
+      - name: Downloading Vagrant plugins
+        run: vagrant plugin install vagrant-hostmanager 
+        
+      - name: Downloading Vagrant plugins
+        run: vagrant plugin install vagrant-vbguest
+    
+      - name: Run vagrant validate
+        run: vagrant validate -v
