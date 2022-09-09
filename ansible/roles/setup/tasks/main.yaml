@@ -9,10 +9,19 @@
     - "apt-daily-upgrade.timer"
 
 # To prevent ansible freezing
-- name: Make enviroment non-interactive
-  ansible.builtin.shell: |
-    echo "DEBIAN_FRONTEND=noninteractive">/home/vagrant/.bashrc && \
-    source /home/vagrant/.bashrc
+- name: Make enviroment non-interactive 1/2
+  ansible.builtin.lineinfile:
+    path: /home/vagrant/.bashrc
+    line: DEBIAN_FRONTEND=noninteractive
+    state: present
+    owner: vagrant
+    group: vagrant
+    mode: '0775'
+  register: frontend
+
+- name: Make enviroment non-interactive 2/2
+  when: frontend is succeeded
+  ansible.builtin.command: source /home/vagrant/.bashrc
   args:
     executable: /bin/bash
 
@@ -30,6 +39,8 @@
     set -o pipefail && ADDRESS="$(ip -4 addr show $1 | grep "inet" | \
     head -1 |awk '{print $2}' | cut -d/ -f1)" && \
     sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
+  args:
+    executable: /bin/bash
 
 - name: Pasting IP adresses of hosts and master
   ansible.builtin.lineinfile:

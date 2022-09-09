@@ -78,6 +78,8 @@
 
 - name: Generatate Containerd default config and push it to the config.toml file
   ansible.builtin.shell: containerd config default>/etc/containerd/config.toml
+  args:
+    executable: /bin/bash
 
 - name: SystemdCgroup = true
   ansible.builtin.lineinfile:
