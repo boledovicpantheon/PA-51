@@ -1,7 +1,7 @@
 ---
 - name: Reset Kubernetes component if needed
   when: not kubeadm_ca.stat.exists
-  ansible.builtin.shell: kubeadm reset --force 
+  ansible.builtin.shell: kubeadm reset --force
   register: reset_cluster
   changed_when: reset_cluster.stdout != ""
   args:
@@ -68,9 +68,17 @@
 # Generate and copy join command
 - name: Generate join command
   when: init_cluster is succeeded
-  ansible.builtin.shell: kubeadm token create --print-join-command>>/vagrant/join_command
+  ansible.builtin.shell: kubeadm token create --print-join-command > /vagrant/join-command
   args:
     executable: /bin/bash
+
+- name: Set perms of join_command
+  file:
+    path: /vagrant/join-command
+    state: file
+    owner: vagrant
+    group: vagrant
+    mode: '0777'
 
 - name: Enable and check kubelet service
   ansible.builtin.service:

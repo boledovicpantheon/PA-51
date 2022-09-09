@@ -39,14 +39,10 @@
     create: true
     mode: '744'
 
-- name: Enable docker serivce
+- name: Enable & Restart docker serivce
   ansible.builtin.service:
     name: docker
     enabled: true
-
-- name: Restart docker, also do daemon-reload
-  ansible.builtin.service:
-    name: docker
     state: restarted
     daemon_reload: true
 
@@ -78,8 +74,8 @@
   register: containerd
 
 - name: Generatate Containerd default config and push it to the config.toml file
-  when: containerd.changed
-  ansible.builtin.shell: containerd config default>/etc/containerd/config.toml
+  when: containerd.changed or not containerd.changed
+  ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
   args:
     executable: /bin/bash
 
