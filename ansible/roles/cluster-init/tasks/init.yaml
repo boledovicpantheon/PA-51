@@ -73,7 +73,7 @@
     executable: /bin/bash
 
 - name: Set perms of join_command
-  file:
+  ansible.builtin.file:
     path: /vagrant/join-command
     state: file
     owner: vagrant
