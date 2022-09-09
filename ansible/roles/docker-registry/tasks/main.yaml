@@ -73,6 +73,8 @@
     --docker-server=docker.registry.com:5000 \
     --docker-username=user \
     --docker-password=password
+  register: secret
+  changed_when: secret.stdout == "secret/regsecret created"
 
 - name: Run docker-compose up and start docker-registry service
   community.docker.docker_compose:

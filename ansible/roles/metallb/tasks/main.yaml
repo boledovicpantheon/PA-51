@@ -7,6 +7,8 @@
     sed -e 's/strictARP: false/strictARP: true/' | kubectl apply -f - -n kube-system
   args:
     executable: /bin/bash
+  register: configmap
+  changed_when: configmap.stdout != ""
 
 # Add helm chart repository for MetalLB
 - name: Add MetalLB helm chart repo

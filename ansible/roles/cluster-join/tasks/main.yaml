@@ -5,6 +5,8 @@
     src: /vagrant/join-command
     dest: /tmp/join-command.sh
     mode: '0777'
+  register: join
 
 - name: Join the node to cluster
+  when: join.changed
   ansible.builtin.command: sh /tmp/join-command.sh

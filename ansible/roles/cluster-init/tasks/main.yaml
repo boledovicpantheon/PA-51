@@ -55,7 +55,7 @@
   register: kubeconfig
 
 - name: Setup kubeconfig for vagrant user 4/4 pt.2
-  when: kubeconfig succeeded
+  when: kubeconfig is succeeded
   ansible.builtin.shell: source /home/vagrant/.bashrc
   args:
     executable: /bin/bash

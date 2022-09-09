@@ -75,8 +75,10 @@
     path: /etc/containerd
     state: directory
     mode: '0755'
+  register: containerd
 
 - name: Generatate Containerd default config and push it to the config.toml file
+  when: containerd.changed
   ansible.builtin.shell: containerd config default>/etc/containerd/config.toml
   args:
     executable: /bin/bash
