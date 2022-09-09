@@ -49,5 +49,5 @@
     name: "{{ item }}"
     state: restarted
   with_items:
-  - "docker"
-  - "containerd"
+    - "docker"
+    - "containerd"

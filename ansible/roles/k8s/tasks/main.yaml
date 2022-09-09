@@ -65,6 +65,7 @@
     state: present
 
 # Installation
+# downloading version 1.24.x because in v1.25 PodSecurityPolicy is removed and MetalLB haven't implemented alternative yet.
 - name: Install Kubernetes binaries
   ansible.builtin.apt:
     force_apt_get: true
@@ -73,9 +74,9 @@
     update_cache: true
     allow_downgrade: true
   with_items:
-  - kubelet=1.24.4-00 # downloading version 1.24.x because in v1.25 PodSecurityPolicy is removed and MetalLB haven't implemented alternative yet.
-  - kubeadm=1.24.4-00
-  - kubectl=1.24.4-00
+    - kubelet=1.24.4-00 
+    - kubeadm=1.24.4-00
+    - kubectl=1.24.4-00
 
 # Add repo and GPG key for helm
 - name: Add an apt signing key for Helm

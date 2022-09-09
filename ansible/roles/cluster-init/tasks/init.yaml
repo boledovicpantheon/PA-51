@@ -1,0 +1,56 @@
+---
+- name: Reset Kubernetes component
+  ansible.builtin.command: kubeadm reset --force #--cri-socket=/var/run/{{ container_runtime }}/{{ container_runtime }}.sock
+  register: reset_cluster
+
+- name: Pull required containers
+  when: reset_cluster is succeeded
+  ansible.builtin.command: kubeadm config images pull
+
+- name: Init Kubernetes cluster
+  when: reset_cluster is succeeded
+  ansible.builtin.command: |
+    kubeadm init \
+    --pod-network-cidr=10.244.0.0/16 \
+    --apiserver-advertise-address=192.168.56.11
+  register: init_cluster
+
+# Setup kubeconfig for vagrant user
+- name: Setup kubeconfig for vagrant user 1/4
+  ansible.builtin.file:
+    path: /home/vagrant/.kube
+    state: directory
+    mode: '0755'
+
+- name: Check if config already exists 2/4 pt.1
+  ansible.builtin.stat:
+    path: /home/vagrant/.kube/config
+  register: config
+
+- name: Setup kubeconfig for vagrant user 2/4 pt.2
+  when: not config.stat.exists
+  ansible.builtin.command: | # when i use ansible.builtin.copy module it fails.
+    sudo cp -i /etc/kubernetes/admin.conf \
+    /home/vagrant/.kube/config 
+
+- name: Setup kubeconfig for vagrant user 3/4
+  ansible.builtin.file:
+    path: /home/vagrant/.kube/config
+    owner: vagrant
+    group: vagrant
+
+- name: Setup kubeconfig for vagrant user 4/4
+  ansible.builtin.shell: |
+    echo "KUBECONFIG=/home/vagrant/.kube/config">/home/vagrant/.bashrc && /
+    source /home/vagrant/.bashrc
+  args:
+    executable: /bin/bash
+
+# Generate and copy join command
+- name: Generate join command
+  when: init_cluster is succeeded
+  ansible.builtin.command: kubeadm token create --print-join-command>>/vagrant/join_command
+#   register: join_command
+
+# - name: Copy join command to local file
+#   local_action: copy content="{{ join_command.stdout_lines[0] }}" dest="./join-command"

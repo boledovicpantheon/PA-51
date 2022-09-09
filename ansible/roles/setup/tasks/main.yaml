@@ -10,7 +10,11 @@
 
 # To prevent ansible freezing
 - name: Make enviroment non-interactive
-  ansible.builtin.shell: echo "DEBIAN_FRONTEND=noninteractive">/home/vagrant/.bashrc && source >/home/vagrant/.bashrc 
+  ansible.builtin.shell: |
+    echo "DEBIAN_FRONTEND=noninteractive">/home/vagrant/.bashrc && \
+    source /home/vagrant/.bashrc
+  args:
+    executable: /bin/bash
 
 # Full system upgrade
 - name: Running apt-get upgrade
@@ -25,7 +29,7 @@
   ansible.builtin.shell: |
     set -o pipefail && ADDRESS="$(ip -4 addr show $1 | grep "inet" | \
     head -1 |awk '{print $2}' | cut -d/ -f1)" && \
-    sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts 
+    sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
 
 - name: Pasting IP adresses of hosts and master
   ansible.builtin.lineinfile:
