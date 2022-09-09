@@ -68,13 +68,15 @@
 
 - name: Create k8s secret with docker.registry.com login credentials
   become: false
-  ansible.builtin.command: |
+  ansible.builtin.shell: |
     kubectl create secret docker-registry regsecret \
     --docker-server=docker.registry.com:5000 \
     --docker-username=user \
     --docker-password=password
   register: secret
   changed_when: secret.stdout == "secret/regsecret created"
+  args:
+    executable: /bin/bash
 
 - name: Run docker-compose up and start docker-registry service
   community.docker.docker_compose:

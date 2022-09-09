@@ -37,7 +37,9 @@
 # If this is not deleted, we cant deploy IPAddressPool, etc.
 - name: Delete ValidatingWebhookConfiguration for metallb
   become: false
-  ansible.builtin.command: kubectl delete -A ValidatingWebhookConfiguration metallb-webhook-configuration
+  ansible.builtin.shell: kubectl delete -A ValidatingWebhookConfiguration metallb-webhook-configuration
+  args:
+    executable: /bin/bash
 
 # This Deployment will asign selected range of IP addresses to the kubernetes services
 - name: Create IPAddressPool deployment

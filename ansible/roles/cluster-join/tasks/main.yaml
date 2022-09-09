@@ -9,4 +9,4 @@
 
 - name: Join the node to cluster
   when: join.changed
-  ansible.builtin.command: sh /tmp/join-command.sh
+  ansible.builtin.shell: bash /tmp/join-command.sh
