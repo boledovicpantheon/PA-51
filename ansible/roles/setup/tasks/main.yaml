@@ -10,7 +10,7 @@
 
 # To prevent ansible freezing
 - name: Make enviroment non-interactive
-  ansible.builtin.command: export DEBIAN_FRONTEND=noninteractive
+  ansible.builtin.shell: export DEBIAN_FRONTEND=noninteractive
 
 # Full system upgrade
 - name: Running apt-get upgrade
@@ -32,9 +32,9 @@
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
-    - { ip: "192.168.56.11", name: "master-1" }
-    - { ip: "192.168.56.101", name: "node-1" }
-    - { ip: "192.168.56.102", name: "node-2" }
+  - { ip: "192.168.56.11", name: "master-1" }
+  - { ip: "192.168.56.101", name: "node-1" }
+  - { ip: "192.168.56.102", name: "node-2" }
 
 - name: Setting DNS server address to 8.8.8.8
   ansible.builtin.lineinfile:

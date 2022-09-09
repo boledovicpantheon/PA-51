@@ -56,46 +56,37 @@
 # Adding repo and GPG key
 - name: Add an apt signing key for Kubernetes
   ansible.builtin.apt_key:
-    url: "{{ item }}"
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
     state: present
-  with_items:
-  - "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
 
 - name: Add apt repository for Kubernetes
   ansible.builtin.apt_repository:
-    repo: "{{ item }}"
+    repo: deb http://packages.cloud.google.com/apt/ kubernetes-xenial main
     state: present
-  with_items:
-  - "deb http://packages.cloud.google.com/apt/ kubernetes-xenial main"
 
 # Installation
 - name: Install Kubernetes binaries
   ansible.builtin.apt:
     force_apt_get: true
-    name: "{{ packages }}"
+    name: "{{ item }}"
     state: present
     update_cache: true
     allow_downgrade: true
-  vars:
-    packages:
-      - kubelet=1.24.4-00 # downloading version 1.24.x because in v1.25 PodSecurityPolicy is removed and MetalLB haven't implemented alternative yet.
-      - kubeadm=1.24.4-00
-      - kubectl=1.24.4-00
+  with_items:
+  - kubelet=1.24.4-00 # downloading version 1.24.x because in v1.25 PodSecurityPolicy is removed and MetalLB haven't implemented alternative yet.
+  - kubeadm=1.24.4-00
+  - kubectl=1.24.4-00
 
 # Add repo and GPG key for helm
 - name: Add an apt signing key for Helm
   ansible.builtin.apt_key:
-    url: "{{ item }}"
+    url: https://baltocdn.com/helm/signing.asc
     state: present
-  with_items:
-  - "https://baltocdn.com/helm/signing.asc"
 
 - name: Add apt repository for Helm
   ansible.builtin.apt_repository:
-    repo: "{{ item }}"
+    repo: deb https://baltocdn.com/helm/stable/debian/ all main
     state: present
-  with_items:
-  - "deb https://baltocdn.com/helm/stable/debian/ all main"
 
 # Helm installation
 - name: Install Helm

@@ -9,10 +9,8 @@
 - name: Add MetalLB helm chart repo
   become: false
   kubernetes.core.helm_repository:            # Error: context deadline exceeded
-    name: "{{ item.name }}"
-    repo_url: "{{ item.url }}"
-  with_items:
-    - { name: metallb, url: https://metallb.github.io/metallb }
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
 
 # Install MetalLB
 - name: Deploy MetalLB chart

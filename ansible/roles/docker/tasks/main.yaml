@@ -2,17 +2,13 @@
 # Add repo and GPG key
 - name: Add an apt signing keys for Docker
   ansible.builtin.apt_key:
-    url: "{{ item }}"
+    url: https://download.docker.com/linux/ubuntu/gpg
     state: present
-  with_items:
-  - "https://download.docker.com/linux/ubuntu/gpg"
 
 - name: Add an apt repository for Docker
   ansible.builtin.apt_repository:
-    repo: "{{ item }}"
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
     state: present
-  with_items:
-  - "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
 
 # Docker Installation
 - name: Install docker and its dependecies
@@ -22,10 +18,10 @@
     state: present
     update_cache: true
   with_items:
-    - docker-ce
-    - docker-ce-cli
-    - containerd.io
-    - docker-compose
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-compose
 
 # Docker Python library
 - name: Install Docker Python library
@@ -81,7 +77,7 @@
     mode: '0755'
 
 - name: Generatate Containerd default config and push it to the config.toml file
-  ansible.builtin.command: containerd config default > /etc/containerd/config.toml
+  ansible.builtin.shell: containerd config default>/etc/containerd/config.toml
 
 - name: SystemdCgroup = true
   ansible.builtin.lineinfile:

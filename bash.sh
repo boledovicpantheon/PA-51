@@ -1,3 +1,4 @@
+#!/bin/bash
 docker login docker.registry.com:5000 -u user -p password
 
 docker pull ubuntu:latest
