@@ -21,7 +21,7 @@
 
 - name: Make enviroment non-interactive 2/2
   when: frontend is succeeded
-  ansible.builtin.command: source /home/vagrant/.bashrc
+  ansible.builtin.shell: source /home/vagrant/.bashrc
   args:
     executable: /bin/bash
 
