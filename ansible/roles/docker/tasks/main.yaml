@@ -73,8 +73,13 @@
     mode: '0755'
   register: containerd
 
+- name: Check if containerd config exists
+  ansible.builtin.stat:
+    path: /home/vagrant/.kube/config
+  register: config
+
 - name: Generatate Containerd default config and push it to the config.toml file
-  when: containerd.changed or not containerd.changed
+  when: config.stat.exists
   ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
   args:
     executable: /bin/bash
