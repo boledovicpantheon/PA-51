@@ -23,7 +23,7 @@
     group: vagrant
 
 - name: Setup kubeconfig for vagrant user 4/4
-  ansible.builtin.shell: export KUBECONFIG=/home/vagrant/.kube/config
+  ansible.builtin.shell: echo "KUBECONFIG=/home/vagrant/.kube/config">/home/vagrant/.bashrc && source >/home/vagrant/.bashrc 
 
 # Generate and copy join command
 - name: Generate join command

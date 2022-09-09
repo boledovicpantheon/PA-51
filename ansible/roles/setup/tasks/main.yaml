@@ -5,12 +5,12 @@
     name: "{{ item }}"
     state: stopped
   with_items:
-  - "apt-daily.timer"
-  - "apt-daily-upgrade.timer"
+    - "apt-daily.timer"
+    - "apt-daily-upgrade.timer"
 
 # To prevent ansible freezing
 - name: Make enviroment non-interactive
-  ansible.builtin.shell: export DEBIAN_FRONTEND=noninteractive
+  ansible.builtin.shell: echo "DEBIAN_FRONTEND=noninteractive">/home/vagrant/.bashrc && source >/home/vagrant/.bashrc 
 
 # Full system upgrade
 - name: Running apt-get upgrade
@@ -23,8 +23,9 @@
 
 - name: Updating /etc/hosts file with $HOSTNAME entry
   ansible.builtin.shell: |
-    ADDRESS="$(ip -4 addr show $1 | grep "inet" | head -1 |awk '{print $2}' | cut -d/ -f1)" && \
-    sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
+    set -o pipefail && ADDRESS="$(ip -4 addr show $1 | grep "inet" | \
+    head -1 |awk '{print $2}' | cut -d/ -f1)" && \
+    sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts 
 
 - name: Pasting IP adresses of hosts and master
   ansible.builtin.lineinfile:
@@ -32,9 +33,9 @@
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
-  - { ip: "192.168.56.11", name: "master-1" }
-  - { ip: "192.168.56.101", name: "node-1" }
-  - { ip: "192.168.56.102", name: "node-2" }
+    - { ip: "192.168.56.11", name: "master-1" }
+    - { ip: "192.168.56.101", name: "node-1" }
+    - { ip: "192.168.56.102", name: "node-2" }
 
 - name: Setting DNS server address to 8.8.8.8
   ansible.builtin.lineinfile:
@@ -71,10 +72,10 @@
     state: present
     update_cache: true
   with_items:
-  - python3-apt
-  - apt-transport-https
-  - ca-certificates
-  - curl
-  - gnupg-agent
-  - software-properties-common
-  - pip
+    - python3-apt
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg-agent
+    - software-properties-common
+    - pip

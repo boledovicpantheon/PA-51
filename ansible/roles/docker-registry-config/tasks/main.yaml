@@ -28,8 +28,8 @@
     recurse: true
     mode: '0744'
   with_items:
-  - "/etc/docker/certs.d/docker.registry.com:5000/"
-  - "/etc/containerd/certs.d/docker.registry.com:5000/"
+    - "/etc/docker/certs.d/docker.registry.com:5000/"
+    - "/etc/containerd/certs.d/docker.registry.com:5000/"
 
 - name: Copy certificates to docker certs.d
   ansible.builtin.copy:

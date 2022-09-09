@@ -3,7 +3,8 @@
 - name: Modify kube-proxy config file to enable strict ARP so we can use MetalLB properly
   become: false
   ansible.builtin.shell: |
-    "kubectl get configmap kube-proxy -n kube-system -o yaml | sed -e 's/strictARP: false/strictARP: true/' | kubectl apply -f - -n kube-system"
+    "set -o pipefail && kubectl get configmap kube-proxy -n kube-system -o yaml | \
+    sed -e 's/strictARP: false/strictARP: true/' | kubectl apply -f - -n kube-system"
 
 # Add helm chart repository for MetalLB
 - name: Add MetalLB helm chart repo

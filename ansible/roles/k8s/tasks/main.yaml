@@ -50,8 +50,8 @@
 - name: Install python libraries
   ansible.builtin.pip:
     name:
-    - pyyaml
-    - kubernetes
+      - pyyaml
+      - kubernetes
 
 # Adding repo and GPG key
 - name: Add an apt signing key for Kubernetes

@@ -3,8 +3,8 @@
 - name: Install Python libraries
   ansible.builtin.pip:
     name:
-    - passlib
-    - cryptography
+      - passlib
+      - cryptography
 
 - name: Install htpasswd
   ansible.builtin.apt:
@@ -19,8 +19,8 @@
     state: directory
     mode: '0755'
   with_items:
-  - "/vagrant/auth"
-  - "/vagrant/certs"
+    - "/vagrant/auth"
+    - "/vagrant/certs"
 
 # Generating SSL private key
 - name: Generate an OpenSSL private key
@@ -85,9 +85,9 @@
           image: registry:latest
           restart: unless-stopped
           volumes:
-          - registry-data:/var/lib/registry
-          - /vagrant/certs:/certs/
-          - /vagrant/auth:/auth/
+            - registry-data:/var/lib/registry
+            - /vagrant/certs:/certs/
+            - /vagrant/auth:/auth/
           environment:
             REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
             REGISTRY_HTTP_TLS_KEY: /certs/registry.key
@@ -95,6 +95,6 @@
             REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
             REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
           ports:
-          - 5000:5000
+            - 5000:5000
       volumes:
         registry-data: {}
