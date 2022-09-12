@@ -29,15 +29,7 @@
 
 # Run handlers now
 - name: Flush handlers
-  meta: flush_handlers
-
-# Waiting till all nodes reach status 'Ready' to continue.
-- name: Wait till all pods with namespace metallb-system are ready.
-  become: false
-  ansible.builtin.shell: |
-    kubectl wait pods --for condition=Ready -n metallb-system --all --timeout=900s && sleep 10
-  args:
-    executable: /bin/bash
+  ansible.builtin.meta: flush_handlers
 
 # If this is not deleted, we cant deploy IPAddressPool, etc.
 - name: Delete ValidatingWebhookConfiguration for metallb
