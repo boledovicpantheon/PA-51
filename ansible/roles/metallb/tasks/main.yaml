@@ -25,6 +25,11 @@
     chart_ref: metallb/metallb
     release_namespace: metallb-system
     create_namespace: true
+  notify: Are-metallb-pods-ready
+
+# Run handlers now
+- name: Flush handlers
+  meta: flush_handlers
 
 # Waiting till all nodes reach status 'Ready' to continue.
 - name: Wait till all pods with namespace metallb-system are ready.
@@ -38,6 +43,8 @@
 - name: Delete ValidatingWebhookConfiguration for metallb
   become: false
   ansible.builtin.shell: kubectl delete -A ValidatingWebhookConfiguration metallb-webhook-configuration
+  register: webhook
+  changed_when: not 'NotFound' in webhook.stdout
   args:
     executable: /bin/bash
 

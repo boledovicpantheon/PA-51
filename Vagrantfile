@@ -49,7 +49,7 @@ end
       master.vm.provision "ansible_local" do |ansible|
         ansible.provisioning_path = "/vagrant"
         ansible.playbook = "ansible/site.yaml"
-#        ansible.verbose = "true" # same as `-v`
+        ansible.verbose = "true" # same as `-v`
         ansible.become = "true" #sudo
         ansible.limit = "all"
         ansible.inventory_path = "ansible/inventory.ini"

@@ -79,7 +79,7 @@
   register: config
 
 - name: Generatate Containerd default config and push it to the config.toml file
-  when: config.stat.exists
+  when: not config.stat.exists
   ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
   args:
     executable: /bin/bash
