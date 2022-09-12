@@ -71,6 +71,7 @@
     - role: ingress-nginx
       tags: ingress
 
+# Only temporary, to verify everything is running as it should
 - name: Run bash script that will upload image to docker registry
   hosts: master
   become: false
