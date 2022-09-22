@@ -80,6 +80,11 @@
     - name: TEMPORARY SOLUTION.. Running bash script & ansible playbook to deploy jenkins pod
       ansible.builtin.shell: bash /vagrant/bash.sh %% ansible-playbook /vagrant/test.yaml
 
+- name: Run bash script that will upload image to docker registry
+  hosts: cluster
+  become: true
+  gather_facts: false
+  tasks:
   # Adding host example.nginx.com to /etc/hosts
     - name: Creating entry in /etc/hosts with DNS name
       ansible.builtin.lineinfile:
