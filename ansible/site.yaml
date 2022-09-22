@@ -77,5 +77,12 @@
   become: false
   gather_facts: false
   tasks:
-    - name: Running bash script
-      ansible.builtin.shell: bash /vagrant/bash.sh
+    - name: TEMPORARY SOLUTION.. Running bash script & ansible playbook to deploy jenkins pod
+      ansible.builtin.shell: bash /vagrant/bash.sh %% ansible-playbook /vagrant/test.yaml
+
+  # Adding host example.nginx.com to /etc/hosts
+    - name: Creating entry in /etc/hosts with DNS name
+      ansible.builtin.lineinfile:
+        state: present
+        dest: /etc/hosts
+        line: "192.168.56.240 example.nginx.com"

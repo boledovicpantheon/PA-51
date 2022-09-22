@@ -1,0 +1,8 @@
+  kubectl taint nodes master-1 node-role.kubernetes.io/control-plane:NoSchedule
+  kubectl taint nodes master-1 node-role.kubernetes.io/master:NoSchedule
+  
+  sudo rm -r /jenkins-data/
+  kubectl delete secret regsecret -n jenkins-system
+  helm uninstall -n jenkins-system jenkins
+  kubectl delete pv pv-for-jenkins
+  ansible-playbook test.yaml 

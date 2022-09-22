@@ -41,7 +41,7 @@ end
       master.vm.network "forwarded_port", guest: 22, host: "#{20200 + i}"
     
       master.vm.provider "virtualbox" do |v| 
-        v.memory = 2048
+        v.memory = 4096
         v.cpus = 4
         v.name = "master-#{i}"
       end
@@ -49,7 +49,7 @@ end
       master.vm.provision "ansible_local" do |ansible|
         ansible.provisioning_path = "/vagrant"
         ansible.playbook = "ansible/site.yaml"
-        ansible.verbose = "true" # same as `-v`
+#         ansible.verbose = "true" # same as `-v`
         ansible.become = "true" #sudo
         ansible.limit = "all"
         ansible.inventory_path = "ansible/inventory.ini"

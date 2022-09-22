@@ -95,3 +95,28 @@
     - gnupg-agent
     - software-properties-common
     - pip
+
+### CALICO CONFIG
+
+# Modify NetworkManager for Calico
+- name: Create a directory /etc/NetworkManager/conf.d if it does not exist
+  ansible.builtin.file:
+    path: /etc/NetworkManager/conf.d
+    state: directory
+    mode: '0755'
+
+- name: Create a directory /etc/NetworkManager/conf.d if it does not exist
+  ansible.builtin.file:
+    path: /etc/NetworkManager/conf.d/calico.conf
+    state: touch
+    mode: '0755'
+
+- name: Modifying calico.conf
+  ansible.builtin.lineinfile:
+    state: present
+    dest: /etc/hosts
+    line: "{{ item }}"
+  with_items: 
+    - "[keyfile]"
+    - "unmanaged-devices=interface-name:cali*;interface-name:tunl*;interface-name:vxlan.calico;interface-name:vxlan-v6.calico;interface-name:wireguard.cali;interface-name:wg-v6.cali"
+
