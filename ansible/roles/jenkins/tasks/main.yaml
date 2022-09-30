@@ -1,0 +1,134 @@
+---
+- name: Install Java
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  with_items: 
+    - "default-jdk"
+    - "default-jre"
+
+- name: Log into private registry
+  community.docker.docker_login:
+    registry_url: docker.registry.com:5000
+    username: user
+    password: password
+
+- name: Download, tag and push jenkins image to local registry
+  docker_image:
+    name: jenkins/jenkins:lts-jdk11
+    repository: docker.registry.com:5000/jenkins:v1
+    source: pull
+    push: yes
+
+- name: Create custom image from jenkins agent image with JJB installed on it
+  community.docker.docker_image:
+    build:
+      path: /vagrant/jenkins/docker/
+    name: docker.registry.com:5000/jjb-agent
+    tag: v1
+    push: true
+    source: build
+
+
+- name: Create a jenkins-system namespace # so we can create secret in it
+  become: false
+  kubernetes.core.k8s:
+    api_version: v1
+    name: jenkins-system  
+    kind: Namespace
+    state: present
+
+# Create docker secret with login credentials in namespace jenkins-system
+- name: Create docker secret in jenkins-system namespace
+  become: false
+  ansible.builtin.shell: |
+    kubectl create secret docker-registry regsecret \
+    --docker-server=docker.registry.com:5000 \
+    --docker-username=user \
+    --docker-password=password \
+    --namespace=jenkins-system
+  register: secret
+  changed_when: secret.stdout == "secret/regsecret created"
+  args:
+    executable: /bin/bash
+
+- name: Un-Taint master node - need to do it because of PV
+  become: false
+  shell: |
+    kubectl taint nodes master-1 node-role.kubernetes.io/control-plane:NoSchedule- && \
+    kubectl taint nodes master-1 node-role.kubernetes.io/master:NoSchedule-
+
+# Setup PV for Jenkins
+- name: Setup PersistentVolume for jenkins
+  become: false
+  kubernetes.core.k8s:
+    definition:
+      kind: PersistentVolume
+      apiVersion: v1
+      metadata:
+        name: pv-for-jenkins
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        capacity:
+          storage: 10Gi
+        hostPath:
+          path: /jenkins-data
+        nodeSelector:
+          kubernetes.io/hostname: master-1
+
+- name: change permissions
+  shell: sudo mkdir /jenkins-data && sudo chmod a+rw /jenkins-data 
+
+# Add helm chart repository
+- name: Add helm chart repository for jenkins
+  become: false
+  kubernetes.core.helm_repository:
+    name: jenkins
+    repo_url: https://charts.jenkins.io
+
+# Install jenkins controller
+- name: Deploy jenkins chart with own values.yaml file
+  become: false
+  kubernetes.core.helm:
+    name: jenkins
+    chart_ref: jenkins/jenkins
+    release_namespace: jenkins-system
+    create_namespace: true
+    values_files:
+      - /vagrant/jenkins/values.yaml
+
+# Run handlers now
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Create pod that will build update job for jenkins for the first time
+  become: false
+  kubernetes.core.k8s:
+    definition:
+      apiVersion: v1
+      kind: Job
+      metadata:
+        name: update-job
+        namespace: jenkins-system
+      spec:
+        template:
+          spec:
+            containers:
+              - name: update-job
+                image: docker.registry.com:5000/jjb-agent:v1
+                command: ["/bin/sh"]
+                args: ["-c", "sh /jobs/generate-config.sh && jenkins-jobs --conf /jobs/config.ini --ignore-cache update /jobs/update-job.yaml"]
+                imagePullPolicy: Always
+                volumeMounts:
+                  - name: jobs
+                    mountPath: /jobs
+                restartPolicy: Never
+            volumes:
+              - name: jobs
+                hostPath:
+                  path: /vagrant/jenkins/jobs
+            imagePullSecrets:
+              - name: regsecret
+            restartPolicy: Never
+        completions: 1

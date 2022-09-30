@@ -18,9 +18,9 @@
   when: pull is succeeded
   ansible.builtin.shell: |
     kubeadm init \
-    --pod-network-cidr=10.244.0.0/16 \
+    --pod-network-cidr=10.32.0.0/12 \
     --apiserver-advertise-address=192.168.56.11
-  register: init_cluster
+  register: init_cluster                              # 10.244.0.0/16 - for calico, now using for weawes
   args:
     executable: /bin/bash
 
@@ -88,18 +88,7 @@
     enabled: true
   register: started_kubelet
 
-# Add helm repositories
-- name: Add helm repositories
+# Changed from calico to weawe because MetalLB had issues with calico
+- name: Install Weawe pod network
   become: false
-  kubernetes.core.helm_repository:
-    name: projectcalico
-    repo_url: https://projectcalico.docs.tigera.io/charts
-
-# Install Calico pod network
-- name: Deploy Calico chart
-  become: false
-  kubernetes.core.helm:
-    name: calico
-    chart_ref: projectcalico/tigera-operator
-    release_namespace: tigera-operator
-    create_namespace: true
+  ansible.builtin.shell: kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"

@@ -1,0 +1,7 @@
+---
+- name: Are-jenkins-pods-ready
+  become: false
+  ansible.builtin.shell: |
+    kubectl wait pods --for condition=Ready -n jenkins-system --all --timeout=900s && sleep 10
+  args:
+    executable: /bin/bash

@@ -1,0 +1,33 @@
+- job:
+    name: "update_job"
+    project_type: freestyle
+    node: jjb-agent
+    description: |
+      This job builds the other jobs from the git repo
+      Managed by Jenkins Job Builder. Do not edit via web.
+    retry-count: 3
+    logrotate:
+      numToKeep: 30
+      artifactNumToKeep: 15
+
+    scm:
+      - git:
+          url: "https://github.com/boledovicpantheon/jenkins-job-definitions.git"
+          branches:
+            - origin/main
+          basedir: jjb-definitions
+
+    triggers:
+      - pollscm: "* * * * *"
+    # jenkins:80 is address of jenkins service which points to jenkins controller node
+    builders:
+      - shell: |
+          cat > $WORKSPACE/config.ini << EOF 
+          [jenkins] 
+          user=admin 
+          password=admin-password 
+          url=http://jenkins:80      
+          EOF
+          cat $WORKSPACE/config.ini
+          env
+          /usr/local/bin/jenkins-jobs --conf $WORKSPACE/config.ini --ignore-cache update $WORKSPACE/jjb-definitions/
