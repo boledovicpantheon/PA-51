@@ -22,10 +22,10 @@ Vagrant.configure("2") do |config|
     node.vm.box = "#{IMAGE_NAME}"
     node.vm.network "private_network", ip: "192.168.56.#{100 + i}"
     node.vm.hostname = "node-#{i}"
-    node.vm.network "forwarded_port", guest: 22, host: "#{20300 + i}"
+#     node.vm.network "forwarded_port", guest: 22, host: "#{20300 + i}"
 
     node.vm.provider "virtualbox" do |v| 
-      v.memory = 1024
+      v.memory = 2048
       v.cpus = 2
       v.name = "node-#{i}"
     end
@@ -38,10 +38,10 @@ end
       master.vm.box = "#{IMAGE_NAME}"
       master.vm.network "private_network", ip: "192.168.56.#{10 + i}"
       master.vm.hostname = "master-#{i}"
-      master.vm.network "forwarded_port", guest: 22, host: "#{20200 + i}"
+#       master.vm.network "forwarded_port", guest: 22, host: "#{20200 + i}"
     
       master.vm.provider "virtualbox" do |v| 
-        v.memory = 4096
+        v.memory = 6144
         v.cpus = 4
         v.name = "master-#{i}"
       end

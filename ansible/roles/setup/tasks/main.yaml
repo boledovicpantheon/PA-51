@@ -35,14 +35,6 @@
   ansible.builtin.apt:
     upgrade: dist
 
-# - name: Updating /etc/hosts file with $HOSTNAME entry
-#   ansible.builtin.shell: |
-#     set -o pipefail && ADDRESS="$(ip -4 addr show $1 | grep "inet" | \
-#     head -1 |awk '{print $2}' | cut -d/ -f1)" && \
-#     sed -e 's/^.*${HOSTNAME).*/${ADDRESS) ${HOSTNAME) ${HOSTNAME).local/' -i /etc/hosts
-#   args:
-#     executable: /bin/bash
-
 - name: Pasting IP adresses of hosts and master
   ansible.builtin.lineinfile:
     state: present
@@ -95,28 +87,3 @@
     - gnupg-agent
     - software-properties-common
     - pip
-
-### CALICO CONFIG
-
-# Modify NetworkManager for Calico
-- name: Create a directory /etc/NetworkManager/conf.d if it does not exist
-  ansible.builtin.file:
-    path: /etc/NetworkManager/conf.d
-    state: directory
-    mode: '0755'
-
-- name: Create a directory /etc/NetworkManager/conf.d if it does not exist
-  ansible.builtin.file:
-    path: /etc/NetworkManager/conf.d/calico.conf
-    state: touch
-    mode: '0755'
-
-- name: Modifying calico.conf
-  ansible.builtin.lineinfile:
-    state: present
-    dest: /etc/hosts
-    line: "{{ item }}"
-  with_items: 
-    - "[keyfile]"
-    - "unmanaged-devices=interface-name:cali*;interface-name:tunl*;interface-name:vxlan.calico;interface-name:vxlan-v6.calico;interface-name:wireguard.cali;interface-name:wg-v6.cali"
-
