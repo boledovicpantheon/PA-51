@@ -33,7 +33,7 @@ kind: Service
 metadata:
   name: nginx-lb
 spec:
-  type: ClusterIP   # Changed from LB, need to test
+  type: LoadBalancer
   selector:
     app: nginx
   ports:
@@ -56,7 +56,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: example.nginx.com
+  - host: myapp.example.com
     http:
       paths:
       - path: /

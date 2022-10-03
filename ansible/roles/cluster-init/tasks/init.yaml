@@ -18,9 +18,9 @@
   when: pull is succeeded
   ansible.builtin.shell: |
     kubeadm init \
-    --pod-network-cidr=10.32.0.0/12 \
+    --pod-network-cidr=10.244.0.0/16 \
     --apiserver-advertise-address=192.168.56.11
-  register: init_cluster                              # 10.244.0.0/16 - for calico, now using for weawes
+  register: init_cluster
   args:
     executable: /bin/bash
 

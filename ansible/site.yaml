@@ -6,8 +6,20 @@
   roles:
     - role: setup
       tags: setup
+
+- name: Docker install
+  hosts: cluster
+  become: true
+  gather_facts: false
+  roles:
     - role: docker
       tags: docker
+
+- name: Kubernetes & Helm install
+  hosts: cluster
+  become: true
+  gather_facts: false
+  roles:
     - role: k8s
       tags: k8s
 
@@ -43,34 +55,53 @@
     - role: docker-registry-config
       tags: reg-config
 
-- name: Install MetalLB+Ingress+Jenkins
+- name: Install MetalLB load balancer on master node
   hosts: master
   become: true
   gather_facts: false
   roles:
     - role: metallb
       tags: metallb
-    - role: ingress-nginx
-      tags: ingress
-    - role: jenkins
-      tags: jenkins
 
+<<<<<<< Updated upstream
+- name: Install ingress-nginx controller on master node
+  hosts: master
+=======
 # Only temporary, to verify everything is running as it should
+- name: Run bash script
+  hosts: master
+  become: false
+  gather_facts: false
   tasks:
     - name: TEMPORARY SOLUTION.. Running bash script to deploy nginx pod
-      ansible.builtin.shell: bash /vagrant/bash.sh 
+      ansible.builtin.shell: bash /vagrant/bash.sh
 
 - name: Create entry in /etc/hosts
   hosts: cluster
+>>>>>>> Stashed changes
   become: true
   gather_facts: false
+  roles:
+    - role: ingress-nginx
+      tags: ingress
+
+# Only temporary, to verify everything is running as it should
+- name: Run bash script that will upload image to docker registry
+  hosts: master
+  become: false
+  gather_facts: false
   tasks:
+<<<<<<< Updated upstream
+    - name: Running bash script
+      ansible.builtin.shell: bash /vagrant/bash.sh
+=======
   # Adding host example.nginx.com to /etc/hosts
     - name: Creating entry in /etc/hosts with DNS names
       ansible.builtin.lineinfile:
         state: present
         dest: /etc/hosts
-        line: "{{ item.ip }} {{ item.name }}"      
+        line: "{{ item.ip }} {{ item.name }}"
       with_items:
         - { ip: "192.168.56.240", name: "example.nginx.com" }
         - { ip: "192.168.56.240", name: "example.jenkins.com" }
+>>>>>>> Stashed changes

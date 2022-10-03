@@ -13,7 +13,7 @@
 # Add helm chart repository for MetalLB
 - name: Add MetalLB helm chart repo
   become: false
-  kubernetes.core.helm_repository:
+  kubernetes.core.helm_repository:            # Error: context deadline exceeded
     name: metallb
     repo_url: https://metallb.github.io/metallb
 
@@ -31,7 +31,7 @@
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
 
-# Need to be deleted because IPAddressPool for MetalLB will not work
+# If this is not deleted, we cant deploy IPAddressPool, etc.
 - name: Delete ValidatingWebhookConfiguration for metallb
   become: false
   ansible.builtin.shell: kubectl delete -A ValidatingWebhookConfiguration metallb-webhook-configuration
@@ -65,6 +65,3 @@
       metadata:
         name: metallb-advertisement
         namespace: metallb-system
-      spec:
-        ipAddressPools:
-          - metallb-addresspool

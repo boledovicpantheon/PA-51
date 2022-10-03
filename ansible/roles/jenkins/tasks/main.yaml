@@ -4,7 +4,7 @@
     name: "{{ item }}"
     state: present
     update_cache: true
-  with_items: 
+  with_items:
     - "default-jdk"
     - "default-jre"
 
@@ -19,7 +19,7 @@
     name: jenkins/jenkins:lts-jdk11
     repository: docker.registry.com:5000/jenkins:v1
     source: pull
-    push: yes
+    push: true
 
 - name: Create custom image from jenkins agent image with JJB installed on it
   community.docker.docker_image:
@@ -35,7 +35,7 @@
   become: false
   kubernetes.core.k8s:
     api_version: v1
-    name: jenkins-system  
+    name: jenkins-system
     kind: Namespace
     state: present
 
@@ -55,7 +55,7 @@
 
 - name: Un-Taint master node - need to do it because of PV
   become: false
-  shell: |
+  ansible.builtin.shell: |
     kubectl taint nodes master-1 node-role.kubernetes.io/control-plane:NoSchedule- && \
     kubectl taint nodes master-1 node-role.kubernetes.io/master:NoSchedule-
 
@@ -69,7 +69,7 @@
       metadata:
         name: pv-for-jenkins
       spec:
-        accessModes: [ "ReadWriteOnce" ]
+        accessModes: ["ReadWriteOnce"]
         capacity:
           storage: 10Gi
         hostPath:
@@ -77,8 +77,8 @@
         nodeSelector:
           kubernetes.io/hostname: master-1
 
-- name: change permissions
-  shell: sudo mkdir /jenkins-data && sudo chmod a+rw /jenkins-data 
+- name: Change permissions
+  ansible.builtin.shell: sudo mkdir /jenkins-data && sudo chmod a+rw /jenkins-data
 
 # Add helm chart repository
 - name: Add helm chart repository for jenkins
