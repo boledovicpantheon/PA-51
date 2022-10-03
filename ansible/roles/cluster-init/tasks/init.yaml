@@ -16,7 +16,7 @@
 
 - name: Init Kubernetes cluster if needed # noqa no-shorthand
   when: pull is succeeded
-  ansible.builtin.shell: |-
+  ansible.builtin.shell: |
     kubeadm init \
     --pod-network-cidr=10.32.0.0/12 \
     --apiserver-advertise-address=192.168.56.11
@@ -92,7 +92,7 @@
 - name: Install Weawe pod network # noqa no-shorthand
   when: init_cluster is succeeded
   become: false
-  ansible.builtin.shell: | 
+  ansible.builtin.shell: |
     set -o pipefail \
     && kubectl apply -f \
     "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
