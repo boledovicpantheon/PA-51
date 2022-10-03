@@ -66,7 +66,7 @@
     crypt_scheme: bcrypt
     mode: '0744'
 
-- name: Create k8s secret with docker.registry.com login credentials
+- name: Create k8s secret with docker.registry.com login credentials # noqa no-shorthand
   become: false
   ansible.builtin.shell: |
     kubectl create secret docker-registry regsecret \

@@ -1,4 +1,5 @@
-- name: Are-metallb-pods-ready
+---
+- name: Are-metallb-pods-ready # noqa no-shorthand
   become: false
   ansible.builtin.shell: |
     kubectl wait pods --for condition=Ready -n metallb-system --all --timeout=900s && sleep 10

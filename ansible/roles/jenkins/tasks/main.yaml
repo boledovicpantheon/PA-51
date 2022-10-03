@@ -53,7 +53,7 @@
   args:
     executable: /bin/bash
 
-- name: Un-Taint master node - need to do it because of PV
+- name: Un-Taint master node - need to do it because of PV # noqa no-shorthand
   become: false
   ansible.builtin.shell: |
     kubectl taint nodes master-1 node-role.kubernetes.io/control-plane:NoSchedule- && \
