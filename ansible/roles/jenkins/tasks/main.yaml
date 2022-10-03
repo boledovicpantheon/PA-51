@@ -58,6 +58,8 @@
   ansible.builtin.shell: |
     kubectl taint nodes master-1 node-role.kubernetes.io/control-plane:NoSchedule- && \
     kubectl taint nodes master-1 node-role.kubernetes.io/master:NoSchedule-
+  args:
+    executable: /bin/bash
 
 # Setup PV for Jenkins
 - name: Setup PersistentVolume for jenkins
@@ -79,6 +81,8 @@
 
 - name: Change permissions
   ansible.builtin.shell: sudo mkdir /jenkins-data && sudo chmod a+rw /jenkins-data
+  args:
+    executable: /bin/bash
 
 # Add helm chart repository
 - name: Add helm chart repository for jenkins

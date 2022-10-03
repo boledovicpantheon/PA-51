@@ -59,6 +59,8 @@
   tasks:
     - name: TEMPORARY SOLUTION.. Running bash script to deploy nginx pod
       ansible.builtin.shell: bash /vagrant/bash.sh
+      args:
+        executable: /bin/bash
 
 - name: Create entry in /etc/hosts
   hosts: cluster
