@@ -16,7 +16,7 @@
 
 - name: Init Kubernetes cluster if needed
   when: pull is succeeded
-  ansible.builtin.shell: |
+  ansible.builtin.shell: |-
     kubeadm init \
     --pod-network-cidr=10.32.0.0/12 \
     --apiserver-advertise-address=192.168.56.11
@@ -91,4 +91,7 @@
 # Changed from calico to weawe because MetalLB had issues with calico
 - name: Install Weawe pod network
   become: false
-  ansible.builtin.shell: kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+  ansible.builtin.shell: |
+    set -o pipefail \
+    && kubectl apply -f \
+    "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"

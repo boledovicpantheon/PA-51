@@ -58,7 +58,7 @@
 # Only temporary, to verify everything is running as it should
   tasks:
     - name: TEMPORARY SOLUTION.. Running bash script to deploy nginx pod
-      ansible.builtin.shell: bash /vagrant/bash.sh 
+      ansible.builtin.shell: bash /vagrant/bash.sh
 
 - name: Create entry in /etc/hosts
   hosts: cluster
@@ -70,7 +70,7 @@
       ansible.builtin.lineinfile:
         state: present
         dest: /etc/hosts
-        line: "{{ item.ip }} {{ item.name }}"      
+        line: "{{ item.ip }} {{ item.name }}"
       with_items:
         - { ip: "192.168.56.240", name: "example.nginx.com" }
         - { ip: "192.168.56.240", name: "example.jenkins.com" }
