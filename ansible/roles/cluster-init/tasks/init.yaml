@@ -14,9 +14,9 @@
     executable: /bin/bash
   register: pull
 
-- name: Init Kubernetes cluster if needed
+- name: Init Kubernetes cluster if needed # noqa no-shorthand
   when: pull is succeeded
-  ansible.builtin.shell: |-
+  ansible.builtin.shell: |- 
     kubeadm init \
     --pod-network-cidr=10.32.0.0/12 \
     --apiserver-advertise-address=192.168.56.11
@@ -90,6 +90,7 @@
 
 # Changed from calico to weawe because MetalLB had issues with calico
 - name: Install Weawe pod network
+  when: init_cluster is succeeded
   become: false
   ansible.builtin.shell: |
     set -o pipefail \

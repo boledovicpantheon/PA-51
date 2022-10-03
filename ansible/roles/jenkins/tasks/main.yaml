@@ -58,6 +58,8 @@
   ansible.builtin.shell: |
     kubectl taint nodes master-1 node-role.kubernetes.io/control-plane:NoSchedule- && \
     kubectl taint nodes master-1 node-role.kubernetes.io/master:NoSchedule-
+  register: taint
+  changed_when: taint.stdout == "node/master-1 untainted"
   args:
     executable: /bin/bash
 
@@ -79,10 +81,13 @@
         nodeSelector:
           kubernetes.io/hostname: master-1
 
-- name: Change permissions
-  ansible.builtin.shell: sudo mkdir /jenkins-data && sudo chmod a+rw /jenkins-data
-  args:
-    executable: /bin/bash
+- name: Create a folder for PV
+  ansible.builtin.file:
+    src: /jenkins-data
+    owner: vagrant
+    group: vagrant
+    mode: 0775
+    state: directory
 
 # Add helm chart repository
 - name: Add helm chart repository for jenkins

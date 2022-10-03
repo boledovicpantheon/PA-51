@@ -3,4 +3,3 @@
   ansible.builtin.shell: bash /tmp/join-command.sh
   args:
     executable: /bin/bash
-
