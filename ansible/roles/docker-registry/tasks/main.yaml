@@ -1,104 +1,107 @@
 ---
 # Install required python libraries and htpasswd
-- name: Install Python libraries
+- name: "Install Python libraries"
   ansible.builtin.pip:
     name:
-      - passlib
-      - cryptography
+      - "passlib"
+      - "cryptography"
 
-- name: Install htpasswd
+- name: "Install htpasswd"
   ansible.builtin.apt:
-    force_apt_get: true
-    name: apache2-utils
-    state: present
-    update_cache: true
+    force_apt_get: "true"
+    name: "apache2-utils"
+    state: "present"
+    update_cache: "true"
 
-- name: Create auth and certs directories if they do not exist
+- name: "Create auth and certs directories if they do not exist"
   ansible.builtin.file:
     path: "{{ item }}"
-    state: directory
-    mode: '0755'
+    state: "directory"
+    mode: "0755"
   with_items:
     - "/vagrant/auth"
     - "/vagrant/certs"
 
 # Generating SSL private key
-- name: Generate an OpenSSL private key
+- name: "Generate an OpenSSL private key"
   community.crypto.openssl_privatekey:
-    state: present
-    path: /vagrant/certs/registry.key
-    type: RSA
-    size: 4096
-    owner: vagrant
-    group: vagrant
-    mode: '0744'
+    state: "present"
+    path: "/vagrant/certs/registry.key"
+    type: "RSA"
+    size: "4096"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0744"
 
 # Generating certificate signing request
-- name: Generate an OpenSSL Certificate Signing Request with Subject information
+- name: "Generate an OpenSSL Certificate Signing Request with Subject information"
   community.crypto.openssl_csr:
-    path: /vagrant/certs/registry.csr
-    privatekey_path: /vagrant/certs/registry.key
-#    organization_name: pantheon.tech
-#    email_address: maros.boledovic@pantheon.tech
-    common_name: docker.registry.com
-    subject_alt_name: 'IP:192.168.56.11,DNS:docker.registry.com'
-    owner: vagrant
-    group: vagrant
-    mode: '0744'
+    path: "/vagrant/certs/registry.csr"
+    privatekey_path: "/vagrant/certs/registry.key"
+    common_name: "docker.registry.com"
+    subject_alt_name: "IP:192.168.56.11,DNS:docker.registry.com"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0744"
 
 # Generating self-signed SSL certificate
-- name: Generate a Self Signed OpenSSL certificate
+- name: "Generate a Self Signed OpenSSL certificate"
   community.crypto.x509_certificate:
-    path: /vagrant/certs/registry.crt
-    privatekey_path: /vagrant/certs/registry.key
-    csr_path: /vagrant/certs/registry.csr
-    provider: selfsigned
-    owner: vagrant
-    group: vagrant
-    mode: '0744'
+    path: "/vagrant/certs/registry.crt"
+    privatekey_path: "/vagrant/certs/registry.key"
+    csr_path: "/vagrant/certs/registry.csr"
+    provider: "selfsigned"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0744"
 
 # Authentication file for docker registry
-- name: Generate htpasswd file
+- name: "Generate htpasswd file"
   community.general.htpasswd:
-    path: /vagrant/auth/htpasswd
-    name: user
-    password: password
-    crypt_scheme: bcrypt
-    mode: '0744'
+    path: "/vagrant/auth/htpasswd"
+    name: "(( htpasswd.username ))" # user"
+    password: "(( htpasswd.password ))" # password"
+    crypt_scheme: "bcrypt"
+    mode: "0744"
 
-- name: Create k8s secret with docker.registry.com login credentials # noqa no-shorthand
+- name: "Create k8s secret with docker.registry.com login credentials"
   become: false
-  ansible.builtin.shell: |
-    kubectl create secret docker-registry regsecret \
-    --docker-server=docker.registry.com:5000 \
-    --docker-username=user \
-    --docker-password=password
-  register: secret
-  changed_when: secret.stdout == "secret/regsecret created"
-  args:
-    executable: /bin/bash
-
-- name: Run docker-compose up and start docker-registry service
-  community.docker.docker_compose:
-    project_name: docker.registry.com
+  kubernetes.core.k8s:
+    state: "present"
     definition:
-      version: '3'
+      apiVersion: "v1"
+      kind: "Secret"
+      metadata:
+        name: "regsecret"
+        namespace: "default"
+      type: "docker-registry"
+      stringData:
+        config.yaml: |
+          docker-server: "docker.registry.com:5000"
+          docker-username: "{{ docker.private.username }}"
+          docker-password: "{{ docker.private.password }}"
+
+- name: "Run docker-compose up and start docker-registry service"
+  community.docker.docker_compose:
+    project_name: "docker.registry.com"
+    definition:
+      version: "3"
       services:
         docker.registry.com:
-          container_name: docker.registry.com
-          image: registry:latest
-          restart: unless-stopped
+          container_name: "docker.registry.com"
+          image: "registry:latest"
+          restart: "unless-stopped"
           volumes:
-            - registry-data:/var/lib/registry
-            - /vagrant/certs:/certs/
-            - /vagrant/auth:/auth/
+            - "registry-data:/var/lib/registry"
+            - "/vagrant/certs:/certs/"
+            - "/vagrant/auth:/auth/"
           environment:
-            REGISTRY_HTTP_TLS_CERTIFICATE: /certs/registry.crt
-            REGISTRY_HTTP_TLS_KEY: /certs/registry.key
-            REGISTRY_AUTH: htpasswd
-            REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
-            REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+            REGISTRY_HTTP_TLS_CERTIFICATE: "/certs/registry.crt"
+            REGISTRY_HTTP_TLS_KEY: "/certs/registry.key"
+            REGISTRY_AUTH: "htpasswd"
+            REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+            REGISTRY_AUTH_HTPASSWD_PATH: "/auth/htpasswd"
           ports:
-            - 5000:5000
+            - "5000:5000"
       volumes:
         registry-data: {}

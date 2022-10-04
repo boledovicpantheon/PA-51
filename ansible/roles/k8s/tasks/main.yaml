@@ -1,49 +1,49 @@
 ---
 # Disable SWAP
-- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
-  ansible.builtin.shell: swapoff -a
-  register: swap
-  changed_when: swap.stdout == ""
+- name: "Disable SWAP since kubernetes can't work with swap enabled (1/2)"
+  ansible.builtin.shell: "swapoff -a"
+  register: "swap"
+  changed_when: 'swap.stdout == ""'
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"
 
-- name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
+- name: "Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)"
   ansible.builtin.replace:
-    path: /etc/fstab
+    path: "/etc/fstab"
     regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
     replace: '# \1'
 
-- name: Remove /swap.img
+- name: "Remove /swap.img"
   ansible.builtin.file:
-    path: /swap.img
-    state: absent
+    path: "/swap.img"
+    state: "absent"
 
 # Adding kernel modules
-- name: Add the br_netfilter and overlay modules
+- name: "Add the br_netfilter and overlay modules"
   community.general.modprobe:
     name: "{{ item }}"
-    state: present
+    state: "present"
   with_items:
     - "br_netfilter"
     - "overlay"
 
-- name: Enable kernel modules
+- name: "Enable kernel modules"
   ansible.builtin.lineinfile:
-    state: present
-    dest: /etc/modules-load.d/k8s.conf
+    state: "present"
+    dest: "/etc/modules-load.d/k8s.conf"
     create: true
-    mode: '0755'
+    mode: "0755"
     line: "{{ item }}"
   with_items:
     - "br_netfilter"
     - "overlay"
 
-- name: Change systcl settings
+- name: "Change systcl settings"
   ansible.posix.sysctl:
     name: "{{ item }}"
-    value: '1'
+    value: "1"
     sysctl_set: true
-    state: present
+    state: "present"
     reload: true
   with_items:
     - "net.bridge.bridge-nf-call-ip6tables"
@@ -51,52 +51,52 @@
     - "net.ipv4.ip_forward"
 
 # Install required Python libraries
-- name: Install python libraries
+- name: "Install python libraries"
   ansible.builtin.pip:
     name:
-      - pyyaml
-      - kubernetes
+      - "pyyaml"
+      - "kubernetes"
 
 # Adding repo and GPG key
-- name: Add an apt signing key for Kubernetes
+- name: "Add an apt signing key for Kubernetes"
   ansible.builtin.apt_key:
-    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    state: present
+    url: "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+    state: "present"
 
-- name: Add apt repository for Kubernetes
+- name: "Add apt repository for Kubernetes"
   ansible.builtin.apt_repository:
-    repo: deb http://packages.cloud.google.com/apt/ kubernetes-xenial main
-    state: present
+    repo: "deb http://packages.cloud.google.com/apt/ kubernetes-xenial main"
+    state: "present"
 
 # Installation
 # downloading version 1.24.x because in v1.25 PodSecurityPolicy is removed and MetalLB haven't implemented alternative yet.
-- name: Install Kubernetes binaries
+- name: "Install Kubernetes binaries"
   ansible.builtin.apt:
     force_apt_get: true
     name: "{{ item }}"
-    state: present
+    state: "present"
     update_cache: true
     allow_downgrade: true
   with_items:
-    - kubelet=1.24.4-00
-    - kubeadm=1.24.4-00
-    - kubectl=1.24.4-00
+    - "kubelet=1.24.4-00"
+    - "kubeadm=1.24.4-00"
+    - "kubectl=1.24.4-00"
 
 # Add repo and GPG key for helm
-- name: Add an apt signing key for Helm
+- name: "Add an apt signing key for Helm"
   ansible.builtin.apt_key:
-    url: https://baltocdn.com/helm/signing.asc
-    state: present
+    url: "https://baltocdn.com/helm/signing.asc"
+    state: "present"
 
-- name: Add apt repository for Helm
+- name: "Add apt repository for Helm"
   ansible.builtin.apt_repository:
-    repo: deb https://baltocdn.com/helm/stable/debian/ all main
-    state: present
+    repo: "deb https://baltocdn.com/helm/stable/debian/ all main"
+    state: "present"
 
 # Helm installation
-- name: Install Helm
+- name: "Install Helm"
   ansible.builtin.apt:
     force_apt_get: true
-    name: helm
-    state: present
+    name: "helm"
+    state: "present"
     update_cache: true

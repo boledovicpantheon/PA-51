@@ -1,100 +1,100 @@
 ---
-- name: Reset Kubernetes component if needed
-  when: not kubeadm_ca.stat.exists
-  ansible.builtin.shell: kubeadm reset --force
-  register: reset_cluster
-  changed_when: reset_cluster.stdout != ""
+- name: "Reset Kubernetes component if needed"
+  when: "not kubeadm_ca.stat.exists"
+  ansible.builtin.shell: "kubeadm reset --force"
+  register: "reset_cluster"
+  changed_when: 'reset_cluster.stdout != ""'
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"
 
-- name: Pull required containers if needed
-  when: reset_cluster is succeeded
-  ansible.builtin.shell: kubeadm config images pull
+- name: "Pull required containers if needed"
+  when: "reset_cluster is succeeded"
+  ansible.builtin.shell: "kubeadm config images pull"
   args:
-    executable: /bin/bash
-  register: pull
+    executable: "/bin/bash"
+  register: "pull"
 
-- name: Init Kubernetes cluster if needed # noqa no-shorthand
-  when: pull is succeeded
+- name: "Init Kubernetes cluster if needed" # noqa no-shorthand
+  when: "pull is succeeded"
   ansible.builtin.shell: |
     kubeadm init \
-    --pod-network-cidr=10.32.0.0/12 \
+    --pod-network-cidr=10.244.0.0/16 \
     --apiserver-advertise-address=192.168.56.11
-  register: init_cluster                              # 10.244.0.0/16 - for calico, now using for weawes
+  register: "init_cluster"
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"
 
 # Setup kubeconfig for vagrant user
-- name: Setup kubeconfig for vagrant user 1/4
+- name: "Setup kubeconfig for vagrant user 1/4"
   ansible.builtin.file:
-    path: /home/vagrant/.kube
-    state: directory
-    mode: '0755'
+    path: "/home/vagrant/.kube"
+    state: "directory"
+    mode: "0755"
 
-- name: Check if config already exists 2/4 pt.1
+- name: "Check if config already exists 2/4 pt.1"
   ansible.builtin.stat:
-    path: /home/vagrant/.kube/config
-  register: config
+    path: "/home/vagrant/.kube/config"
+  register: "config"
 
-- name: Setup kubeconfig for vagrant user 2/4 pt.2
-  when: not config.stat.exists
-  ansible.builtin.shell: | # when i use ansible.builtin.copy module it fails.
+- name: "Setup kubeconfig for vagrant user 2/4 pt.2"
+  when: "not config.stat.exists"
+  ansible.builtin.shell: |              # when i use ansible.builtin.copy module it fails.
     sudo cp -i /etc/kubernetes/admin.conf \
     /home/vagrant/.kube/config
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"
 
-- name: Setup kubeconfig for vagrant user 3/4
+- name: "Setup kubeconfig for vagrant user 3/4"
   ansible.builtin.file:
-    path: /home/vagrant/.kube/config
-    owner: vagrant
-    group: vagrant
+    path: "/home/vagrant/.kube/config"
+    owner: "vagrant"
+    group: "vagrant"
 
-- name: Setup kubeconfig for vagrant user 4/4 pt.1
+- name: "Setup kubeconfig for vagrant user 4/4 pt.1"
   ansible.builtin.lineinfile:
-    path: /home/vagrant/.bashrc
-    line: KUBECONFIG=/home/vagrant/.kube/config
-    owner: vagrant
-    group: vagrant
-    mode: '0775'
-  register: kubeconfig
+    path: "/home/vagrant/.bashrc"
+    line: "KUBECONFIG=/home/vagrant/.kube/config"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0775"
+  register: "kubeconfig"
 
-- name: Setup kubeconfig for vagrant user 4/4 pt.2
-  when: kubeconfig is succeeded
-  ansible.builtin.shell: source /home/vagrant/.bashrc
+- name: "Setup kubeconfig for vagrant user 4/4 pt.2"
+  when: "kubeconfig is succeeded"
+  ansible.builtin.shell: "source /home/vagrant/.bashrc"
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"
 
 # Generate and copy join command
-- name: Generate join command
-  when: init_cluster is succeeded
-  ansible.builtin.shell: kubeadm token create --print-join-command > /vagrant/join-command
+- name: "Generate join command"
+  when: "init_cluster is succeeded"
+  ansible.builtin.shell: "kubeadm token create --print-join-command > /vagrant/join-command"
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"
 
-- name: Set perms of join_command
+- name: "Set perms of join_command"
   ansible.builtin.file:
-    path: /vagrant/join-command
-    state: file
-    owner: vagrant
-    group: vagrant
-    mode: '0777'
+    path: "/vagrant/join-command"
+    state: "file"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0777"
 
-- name: Enable and check kubelet service
+- name: "Enable and check kubelet service"
   ansible.builtin.service:
-    name: kubelet
+    name: "kubelet"
     daemon_reload: true
-    state: started
+    state: "started"
     enabled: true
-  register: started_kubelet
+  register: "started_kubelet"
 
-# Changed from calico to weawe because MetalLB had issues with calico
-- name: Install Weawe pod network # noqa no-shorthand
-  when: init_cluster is succeeded
+# Changed from calico to weave because MetalLB had issues with calico
+- name: "Install Weave pod network" 
+  when: "init_cluster is succeeded"
   become: false
   ansible.builtin.shell: |
     set -o pipefail \
     && kubectl apply -f \
-    "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+    "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml" 
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"

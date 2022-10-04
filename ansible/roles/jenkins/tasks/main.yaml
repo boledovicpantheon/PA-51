@@ -1,143 +1,147 @@
 ---
-- name: Install Java
+- name: "Install Java"
   ansible.builtin.apt:
     name: "{{ item }}"
-    state: present
+    state: "present"
     update_cache: true
   with_items:
     - "default-jdk"
     - "default-jre"
 
-- name: Log into private registry
+- name: "Log into private registry"
   community.docker.docker_login:
-    registry_url: docker.registry.com:5000
-    username: user
-    password: password
+    registry_url: "docker.registry.com:5000"
+    username: "user"
+    password: "password"
 
-- name: Download, tag and push jenkins image to local registry
+- name: "Download, tag and push jenkins image to local registry"
   community.docker.docker_image:
-    name: jenkins/jenkins:lts-jdk11
-    repository: docker.registry.com:5000/jenkins:v1
-    source: pull
+    name: "jenkins/jenkins:lts-jdk11"
+    repository: "docker.registry.com:5000/jenkins:v1"
+    source: "pull"
     push: true
 
-- name: Create custom image from jenkins agent image with JJB installed on it
+- name: "Create custom image from jenkins agent image with JJB installed on it"
   community.docker.docker_image:
     build:
-      path: /vagrant/jenkins/docker/
-    name: docker.registry.com:5000/jjb-agent
-    tag: v1
+      path: "/vagrant/jenkins/docker/"
+    name: "docker.registry.com:5000/jjb-agent"
+    tag: "v1"
     push: true
-    source: build
+    source: "build"
 
 
-- name: Create a jenkins-system namespace # so we can create secret in it
+- name: "Create a jenkins-system namespace # so we can create secret in it"
   become: false
   kubernetes.core.k8s:
-    api_version: v1
-    name: jenkins-system
-    kind: Namespace
-    state: present
+    api_version: "v1"
+    name: "jenkins-system"
+    kind: "Namespace"
+    state: "present"
 
 # Create docker secret with login credentials in namespace jenkins-system
-- name: Create docker secret in jenkins-system namespace # noqa no-shorthand
+- name: "Create k8s secret with docker.registry.com login credentials in namespace jenkins-system"
   become: false
-  ansible.builtin.shell: |
-    kubectl create secret docker-registry regsecret \
-    --docker-server=docker.registry.com:5000 \
-    --docker-username=user \
-    --docker-password=password \
-    --namespace=jenkins-system
-  register: secret
-  changed_when: secret.stdout == "secret/regsecret created"
-  args:
-    executable: /bin/bash
+  kubernetes.core.k8s:
+    state: "present"
+    definition:
+      apiVersion: "v1"
+      kind: "Secret"
+      metadata:
+        name: "regsecret"
+        namespace: "jenkins-system"
+      type: "docker-registry"
+      stringData:
+        config.yaml: |
+          docker-server: "docker.registry.com:5000"
+          docker-username: "{{ docker.private.username }}"
+          docker-password: "{{ docker.private.password }}"
 
-- name: Un-Taint master node - need to do it because of PV
+- name: "Un-Taint master node - need to do it because of PV"
   become: false
   ansible.builtin.shell: |
     kubectl taint nodes master-1 node-role.kubernetes.io/control-plane:NoSchedule- && \
     kubectl taint nodes master-1 node-role.kubernetes.io/master:NoSchedule-
-  register: taint
-  changed_when: taint.stdout == "node/master-1 untainted"
+  register: "taint"
+  changed_when: 'taint.stdout == "node/master-1 untainted"'
   args:
-    executable: /bin/bash
+    executable: "/bin/bash"
 
 # Setup PV for Jenkins
-- name: Setup PersistentVolume for jenkins
+- name: "Setup PersistentVolume for jenkins"
   become: false
   kubernetes.core.k8s:
     definition:
-      kind: PersistentVolume
-      apiVersion: v1
+      kind: "PersistentVolume"
+      apiVersion: "v1"
       metadata:
-        name: pv-for-jenkins
+        name: "pv-for-jenkins"
       spec:
         accessModes: ["ReadWriteOnce"]
         capacity:
-          storage: 10Gi
+          storage: "10Gi"
         hostPath:
-          path: /jenkins-data
+          path: "/jenkins-data"
         nodeSelector:
-          kubernetes.io/hostname: master-1
+          kubernetes.io/hostname: "master-1"
 
-- name: Create a folder for PV
+- name: "Create a folder for PV"
   ansible.builtin.file:
-    src: /jenkins-data
-    owner: vagrant
-    group: vagrant
-    mode: 0775
-    state: directory
+    path: "/jenkins-data"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0775"
+    state: "directory"
 
 # Add helm chart repository
-- name: Add helm chart repository for jenkins
+- name: "Add helm chart repository for jenkins"
   become: false
   kubernetes.core.helm_repository:
-    name: jenkins
-    repo_url: https://charts.jenkins.io
+    name: "jenkins"
+    repo_url: "https://charts.jenkins.io"
 
 # Install jenkins controller
-- name: Deploy jenkins chart with own values.yaml file
+- name: "Deploy jenkins chart with own values.yaml file"
   become: false
   kubernetes.core.helm:
-    name: jenkins
-    chart_ref: jenkins/jenkins
-    release_namespace: jenkins-system
+    name: "jenkins"
+    chart_ref: "jenkins/jenkins"
+    release_namespace: "jenkins-system"
     create_namespace: true
     values_files:
-      - /vagrant/jenkins/values.yaml
+      - "/vagrant/jenkins/values.yaml"
 
 # Run handlers now
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
+- name: "Flush handlers"
+  ansible.builtin.meta: "flush_handlers"
 
-- name: Create pod that will build update job for jenkins for the first time
+- name: "Create pod that will build update job for jenkins for the first time"
   become: false
   kubernetes.core.k8s:
     definition:
-      apiVersion: v1
-      kind: Job
+      apiVersion: "v1"
+      kind: "Job"
       metadata:
-        name: update-job
-        namespace: jenkins-system
+        name: "update-job"
+        namespace: "jenkins-system"
       spec:
         template:
           spec:
             containers:
-              - name: update-job
-                image: docker.registry.com:5000/jjb-agent:v1
+              - name: "update-job"
+                image: "docker.registry.com:5000/jjb-agent:v1"
                 command: ["/bin/sh"]
                 args: ["-c", "sh /jobs/generate-config.sh && jenkins-jobs --conf /jobs/config.ini --ignore-cache update /jobs/update-job.yaml"]
-                imagePullPolicy: Always
+                imagePullPolicy: "Always"
                 volumeMounts:
-                  - name: jobs
-                    mountPath: /jobs
-                restartPolicy: Never
+                  - name: "jobs"
+                    mountPath: "/jobs"
+                restartPolicy: "Never"
             volumes:
-              - name: jobs
+              - name: "jobs"
                 hostPath:
-                  path: /vagrant/jenkins/jobs
+                  path: "/vagrant/jenkins/jobs"
             imagePullSecrets:
-              - name: regsecret
-            restartPolicy: Never
+              - name: "regsecret"
+            restartPolicy: "Never"
         completions: 1

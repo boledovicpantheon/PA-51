@@ -54,6 +54,7 @@ end
         ansible.limit = "all"
         ansible.inventory_path = "ansible/inventory/"
         ansible.config_file = "ansible/ansible.cfg"
+        # ansible.ask_vault_pass = "true"
       end
     end
   end

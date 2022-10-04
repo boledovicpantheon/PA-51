@@ -1,9 +1,9 @@
 ---
 # Copy join command that we generated in 'cluster-init' ansible role and execute it
-- name: Copy the join command to server location
+- name: "Copy the join command to server location"
   ansible.builtin.copy:
     remote_src: true
-    src: /vagrant/join-command
-    dest: /tmp/join-command.sh
-    mode: '0777'
-  notify: Join_node
+    src: "/vagrant/join-command"
+    dest: "/tmp/join-command.sh"
+    mode: "0777"
+  notify: "Join_node"

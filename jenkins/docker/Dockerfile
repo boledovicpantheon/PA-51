@@ -1,5 +1,5 @@
 # FROM python:3
-FROM jenkins/inbound-agent
+FROM jenkins/inbound-agent:latest
 
 WORKDIR /home/jenkins
 
