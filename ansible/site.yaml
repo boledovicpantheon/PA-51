@@ -73,7 +73,7 @@
   become: true
   gather_facts: false
   tasks:
-  # Adding host example.nginx.com to /etc/hosts
+  # Adding host example.XXXX.com to /etc/hosts
     - name: "Creating entry in /etc/hosts with DNS names"
       ansible.builtin.lineinfile:
         state: "present"
