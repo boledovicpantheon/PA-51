@@ -8,11 +8,43 @@
     - "default-jdk"
     - "default-jre"
 
-- name: "Log into private registry"
+- name: "Log-in to private registry"
   community.docker.docker_login:
     registry_url: "docker.registry.com:5000"
-    username: "user"
-    password: "password"
+    username: "{{ docker.private.username }}"
+    password: "{{ docker.private.password }}"
+
+- name: "Create a jenkins-system namespace # so we can create secret in it"
+  become: false
+  kubernetes.core.k8s:
+    api_version: "v1"
+    name: "jenkins-system"
+    kind: "Namespace"
+    state: "present"
+
+- name: "Encode .dockerconfigjson for k8s secret"
+  shell: |
+    USERNAME=$(echo -n "{{ docker.private.username }}") \
+    && PASSWORD=$(echo -n "{{ docker.private.password }}") \
+    && AUTH=$(echo -n "$USERNAME:$PASSWORD" | base64 ) \
+    && ECHO='{"auths":{"docker.registry.com:5000":{"username":"'$USERNAME'","password":"'$PASSWORD'","auth":"'$AUTH'"}}}' \
+    && echo -n $ECHO | base64 --wrap=0
+  register: echo
+
+# Create docker secret with login credentials in namespace jenkins-system
+- name: "Create k8s secret with docker.registry.com login credentials in namespace jenkins-system"
+  become: false
+  kubernetes.core.k8s:
+    state: "present"
+    definition:
+      apiVersion: "v1"
+      kind: "Secret"
+      metadata:
+        name: "regsecret"
+        namespace: "jenkins-system"
+      type: "kubernetes.io/dockerconfigjson"
+      data:
+        .dockerconfigjson: "{{ echo.stdout }}"
 
 - name: "Download, tag and push jenkins image to local registry"
   community.docker.docker_image:
@@ -29,33 +61,6 @@
     tag: "v1"
     push: true
     source: "build"
-
-
-- name: "Create a jenkins-system namespace # so we can create secret in it"
-  become: false
-  kubernetes.core.k8s:
-    api_version: "v1"
-    name: "jenkins-system"
-    kind: "Namespace"
-    state: "present"
-
-# Create docker secret with login credentials in namespace jenkins-system
-- name: "Create k8s secret with docker.registry.com login credentials in namespace jenkins-system"
-  become: false
-  kubernetes.core.k8s:
-    state: "present"
-    definition:
-      apiVersion: "v1"
-      kind: "Secret"
-      metadata:
-        name: "regsecret"
-        namespace: "jenkins-system"
-      type: "docker-registry"
-      stringData:
-        config.yaml: |
-          docker-server: "docker.registry.com:5000"
-          docker-username: "{{ docker.private.username }}"
-          docker-password: "{{ docker.private.password }}"
 
 - name: "Un-Taint master node - need to do it because of PV"
   become: false
@@ -110,6 +115,7 @@
     create_namespace: true
     values_files:
       - "/vagrant/jenkins/values.yaml"
+  notify: "Are-jenkins-pods-ready"
 
 # Run handlers now
 - name: "Flush handlers"

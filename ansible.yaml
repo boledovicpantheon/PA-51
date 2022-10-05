@@ -1,0 +1,16 @@
+- hosts: localhost
+  become: true
+  tasks:
+    - name: "Encode username:password for docker secret"
+      shell: |
+        USERNAME=$(echo "USERNAME") \
+        && PASSWORD=$(echo "PASSWORD") \
+        && AUTH=$(echo "$USERNAME:$PASSWORD" | base64 ) \
+        && FINAL='{"auths":{"docker.registry.com:5000":{"auth:"'$AUTH'"}}}' \
+        && echo $FINAL | base64
+        #&& ECHO=$(echo $FINAL | base64) \
+        #&& echo $ECHO
+      register: output
+
+    - name: "TEST"
+      shell: "echo '{{ output.stdout_lines[0] + output.stdout_lines[1] }}' > /vagrant/test"

@@ -64,7 +64,17 @@
     crypt_scheme: "bcrypt"
     mode: "0744"
 
-- name: "Create k8s secret with docker.registry.com login credentials"
+- name: "Encode username:password for docker secret"
+  shell: |
+    USERNAME=$(echo -n "{{ docker.private.username }}") \
+    && PASSWORD=$(echo -n "{{ docker.private.password }}") \
+    && AUTH=$(echo -n "$USERNAME:$PASSWORD" | base64 ) \
+    && ECHO='{"auths":{"docker.registry.com:5000":{"username":"'$USERNAME'","password":"'$PASSWORD'","auth":"'$AUTH'"}}}' \
+    && echo -n $ECHO | base64 --wrap=0
+  register: echo
+
+# Create docker secret with login credentials in namespace jenkins-system
+- name: "Create k8s secret with docker.registry.com login credentials in namespace jenkins-system"
   become: false
   kubernetes.core.k8s:
     state: "present"
@@ -74,12 +84,9 @@
       metadata:
         name: "regsecret"
         namespace: "default"
-      type: "docker-registry"
-      stringData:
-        config.yaml: |
-          docker-server: "docker.registry.com:5000"
-          docker-username: "{{ docker.private.username }}"
-          docker-password: "{{ docker.private.password }}"
+      type: "kubernetes.io/dockerconfigjson"
+      data:
+        .dockerconfigjson: "{{ echo.stdout }}"
 
 - name: "Run docker-compose up and start docker-registry service"
   community.docker.docker_compose:

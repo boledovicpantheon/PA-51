@@ -88,13 +88,15 @@
     enabled: true
   register: "started_kubelet"
 
-# Changed from calico to weave because MetalLB had issues with calico
-- name: "Install Weave pod network" 
+# Changed from calico to flannel because MetalLB had issues with calico
+- name: "Install flannel pod network" 
   when: "init_cluster is succeeded"
   become: false
   ansible.builtin.shell: |
     set -o pipefail \
     && kubectl apply -f \
-    "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml" 
+    "https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/canal.yaml" 
   args:
     executable: "/bin/bash"
+
+# https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
