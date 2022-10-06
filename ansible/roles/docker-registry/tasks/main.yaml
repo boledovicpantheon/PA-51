@@ -64,14 +64,16 @@
     crypt_scheme: "bcrypt"
     mode: "0744"
 
-- name: "Encode username:password for docker secret"
-  shell: |
-    USERNAME=$(echo -n "{{ docker.private.username }}") \
+- name: "Encode username:password for docker secret" # noqa no-shorthand
+  ansible.builtin,shell: |
+    set -o pipefail \
+    && USERNAME=$(echo -n "{{ docker.private.username }}") \
     && PASSWORD=$(echo -n "{{ docker.private.password }}") \
     && AUTH=$(echo -n "$USERNAME:$PASSWORD" | base64 ) \
     && ECHO='{"auths":{"docker.registry.com:5000":{"username":"'$USERNAME'","password":"'$PASSWORD'","auth":"'$AUTH'"}}}' \
     && echo -n $ECHO | base64 --wrap=0
   register: echo
+  changed_when: 'echo.stdout != ""'
 
 # Create docker secret with login credentials in namespace jenkins-system
 - name: "Create k8s secret with docker.registry.com login credentials in namespace jenkins-system"
