@@ -23,7 +23,7 @@
     state: "present"
 
 - name: "Encode username:password for docker secret" # noqa no-shorthand
-  ansible.builtin,shell: |
+  ansible.builtin.shell: |
     set -o pipefail \
     && USERNAME=$(echo -n "{{ docker.private.username }}") \
     && PASSWORD=$(echo -n "{{ docker.private.password }}") \
