@@ -12,9 +12,9 @@ jobs:
       run: sudo apt-get update && sudo apt-get install npm -y
 
     - name: download dockerlinter
-      run: sudo npm install -g dockerlinter
+      run: sudo npm install -g dockerfilelint # npm install -g dockerlinter
 
     - name: run diockerlinter
-      run: dockerlinter -f dockerfiles/*
+      run: ./bin/dockerfilelint dockerfiles/* # dockerlinter -f dockerfiles/*
 
       
