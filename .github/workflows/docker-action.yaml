@@ -1,5 +1,4 @@
 name: docker-action
-
 on: push
 
 jobs:
