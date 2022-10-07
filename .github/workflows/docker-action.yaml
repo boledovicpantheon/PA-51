@@ -11,10 +11,10 @@ jobs:
     - name: install npm
       run: sudo apt-get update && sudo apt-get install npm -y
 
-    - name: download dockerlinter
+    - name: download dockerfilelint
       run: sudo npm install -g dockerfilelint # npm install -g dockerlinter
 
-    - name: run diockerlinter
+    - name: run dockerfilelint
       run: dockerfilelint dockerfiles/* # dockerlinter -f dockerfiles/*
 
       
