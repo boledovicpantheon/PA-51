@@ -60,7 +60,7 @@
 - name: "Create custom image from jenkins agent image with JJB installed on it"
   community.docker.docker_image:
     build:
-      path: "/vagrant/jenkins/docker/"
+      path: "/vagrant/dockerfiles/"
     name: "docker.registry.com:5000/jjb-agent"
     tag: "v1"
     push: true

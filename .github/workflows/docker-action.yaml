@@ -7,7 +7,14 @@ jobs:
     steps: 
     - name: Checkout
       uses: actions/checkout@master
-    - name: lint
-      uses: luke142367/Docker-Lint-Action@v1.0.0
-      with:
-        target: "dockerfiles/"
+    
+    - name: install npm
+      run: apt-get update && apt-get install npm -y
+
+    - name: download dockerlinter
+      run: npm install -g dockerlinter
+
+    - name: run diockerlinter
+      run: dockerlinter -f dockerfiles/*
+
+      
