@@ -2,7 +2,7 @@ name: ansible-action
 on: push
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -11,7 +11,12 @@ jobs:
         uses: ansible-community/ansible-lint-action@main
         with:
           path: "ansible/"
-
+          
+  molecule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
       - name: Create a scenario
         uses: amine7777/molecule-action@v1
         with:
