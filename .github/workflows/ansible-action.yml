@@ -1,4 +1,4 @@
-name: Ansible Action 
+name: ansible-action
 on: push
 
 jobs:
