@@ -54,7 +54,7 @@ end
         ansible.limit = "all"
         ansible.inventory_path = "ansible/inventory/"
         ansible.config_file = "ansible/ansible.cfg"
-        ansible.raw_arguments = ["--vault-pass-file=/vagrant/ansible/vault/secret.yaml"]
+        ansible.raw_arguments = ["--vault-pass-file=/vagrant/ansible/vault/secret"]
       end
     end
   end

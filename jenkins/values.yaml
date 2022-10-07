@@ -1,7 +1,7 @@
 controller:
   componentName: "jenkins-controller"
-  # image: "docker.registry.com:5000/jenkins"
-  # tag: "v1"
+  image: "docker.registry.com:5000/jenkins"
+  tag: "v1"
   imagePullPolicy: "Always"
   # We need to have kubernetes secret in the same namespace 
   # as helm chart deployment
@@ -32,7 +32,6 @@ controller:
     - workflow-aggregator:581.v0c46fa_697ffd
     - git:4.11.3
     - configuration-as-code:1429.v09b_044a_c93de
-    - pipeline:latest
   
   ingress:
     enabled: true

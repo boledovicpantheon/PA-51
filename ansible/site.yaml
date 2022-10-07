@@ -60,13 +60,13 @@
   vars_files:
     - "/vagrant/ansible/vault/vault.yaml"
 
-# Only temporary, to verify everything is running as it should
-  tasks:
-    - name: "TEMPORARY SOLUTION.. Running bash script to deploy nginx pod"
-      become: false
-      ansible.builtin.shell: "bash /vagrant/bash.sh"
-      args:
-        executable: "/bin/bash"
+# # Only temporary, to verify everything is running as it should
+#   tasks:
+#     - name: "TEMPORARY SOLUTION.. Running bash script to deploy nginx pod"
+#       become: false
+#       ansible.builtin.shell: "bash /vagrant/bash.sh"
+#       args:
+#         executable: "/bin/bash"
 
 - name: "Create entry in /etc/hosts"
   hosts: "cluster"

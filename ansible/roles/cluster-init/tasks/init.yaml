@@ -95,8 +95,6 @@
   ansible.builtin.shell: |
     set -o pipefail \
     && kubectl apply -f \
-    "https://raw.githubusercontent.com/projectcalico/calico/v3.24.1/manifests/canal.yaml"
+    "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
   args:
     executable: "/bin/bash"
-
-# https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml

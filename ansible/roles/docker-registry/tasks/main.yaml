@@ -74,6 +74,8 @@
     && echo -n $ECHO | base64 --wrap=0
   register: echo
   changed_when: 'echo.stdout != ""'
+  args:
+    executable: "/bin/bash"
 
 # Create docker secret with login credentials in namespace jenkins-system
 - name: "Create k8s secret with docker.registry.com login credentials in namespace jenkins-system"
