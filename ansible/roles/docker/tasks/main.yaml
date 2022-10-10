@@ -1,0 +1,99 @@
+---
+# Add repo and GPG key
+- name: "Add an apt signing keys for Docker"
+  ansible.builtin.apt_key:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    state: "present"
+
+- name: "Add an apt repository for Docker"
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+    state: "present"
+
+# Docker Installation
+- name: "Install docker and its dependecies"
+  ansible.builtin.apt:
+    force_apt_get: true
+    name: "{{ item }}"
+    state: "present"
+    update_cache: true
+  with_items:
+    - "docker-ce"
+    - "docker-ce-cli"
+    - "containerd.io"
+    - "docker-compose"
+
+# Docker Python library
+- name: "Install Docker Python library"
+  ansible.builtin.pip:
+    name:
+      - "docker"
+      - "overlay"
+
+# Docker daemon config
+- name: "Configure the Docker daemon in particular to use systemd for the management of the containers cgroups."
+  ansible.builtin.lineinfile:
+    state: "present"
+    dest: "/etc/docker/daemon.json"
+    line: '{ "exec-opts": ["native.cgroupdriver=systemd"], "log-driver": "json-file", "log-opts": { "max-size": "200m" }, "storage-driver": "overlay2" } '
+    create: true
+    mode: "744"
+
+- name: "Enable & Restart docker serivce"
+  ansible.builtin.service:
+    name: "docker"
+    enabled: true
+    state: "restarted"
+    daemon_reload: true
+
+# Add user to docker group so we can use docker commands without sudo
+- name: "Add vagrant user to docker group"
+  ansible.builtin.user:
+    name: "vagrant"
+    groups: "docker"
+    append: true
+
+# RunC installation
+- name: "Download RunC"
+  ansible.builtin.get_url:
+    url: "https://github.com/opencontainers/runc/releases/download/v1.1.1/runc.amd64"
+    dest: "/tmp/runc.amd64"
+    mode: "0755"
+
+- name: "Copy RunC to /usr/local/sbin/"
+  ansible.builtin.copy:
+    src: "/tmp/runc.amd64"
+    dest: "/usr/local/sbin/runc"
+    mode: "0755"
+
+- name: "Create a directory for containerd default config"
+  ansible.builtin.file:
+    path: "/etc/containerd"
+    state: "directory"
+    mode: "0755"
+  register: "containerd"
+
+- name: "Check if containerd config exists"
+  ansible.builtin.stat:
+    path: "/home/vagrant/.kube/config"
+  register: "config"
+
+- name: "Generatate Containerd default config and push it to the config.toml file"
+  when: "not config.stat.exists"
+  ansible.builtin.shell: "containerd config default > /etc/containerd/config.toml"
+  args:
+    executable: "/bin/bash"
+
+- name: "SystemdCgroup =true"
+  ansible.builtin.lineinfile:
+    state: "present"
+    dest: "/etc/containerd/config.toml"
+    regexp: "SystemdCgroup = false"
+    line: "SystemdCgroup =true"
+
+# Restart Containerd to apply changes
+- name: "Restart containerd, also do daemon-reload"
+  ansible.builtin.service:
+    name: "containerd"
+    state: "restarted"
+    daemon_reload: true

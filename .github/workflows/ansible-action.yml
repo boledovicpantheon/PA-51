@@ -1,0 +1,37 @@
+name: ansible-action
+on: push
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: ansible-lint
+        uses: ansible-community/ansible-lint-action@main
+        with:
+          path: "ansible/"
+          
+  molecule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Create a scenario
+        uses: amine7777/molecule-action@v1
+        with:
+          command: molecule init scenario
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+
+      - name: molecule test
+        uses: amine7777/molecule-action@v1
+        with:
+          command: molecule test
+          path: "ansible/"  
+        env:
+          PY_COLORS: '1'
+          ANSIBLE_FORCE_COLOR: '1'
+
+ # noqa no-shorthand

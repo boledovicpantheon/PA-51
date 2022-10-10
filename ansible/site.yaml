@@ -1,0 +1,84 @@
+---
+- name: "Initial configuration and installation"
+  hosts: "cluster"
+  become: true
+  gather_facts: false
+  roles:
+    - role: "setup"
+      tags: "setup"
+    - role: "docker"
+      tags: "docker"
+    - role: "k8s"
+      tags: "k8s"
+
+- name: "Initialize cluster"
+  hosts: "master"
+  become: true
+  gather_facts: false
+  roles:
+    - role: "cluster-init"
+      tags: "cluster-init"
+
+- name: "Join nodes to the cluster"
+  hosts: "nodes"
+  become: true
+  gather_facts: false
+  roles:
+    - role: "cluster-join"
+      tags: "cluster-join"
+
+- name: "Docker-Registry install & Create SSL certificates"
+  hosts: "master"
+  become: true
+  gather_facts: false
+  roles:
+    - role: "docker-registry"
+      tags: "docker-reg"
+  vars_files:
+    - "/vagrant/ansible/vault/vault.yaml"
+    # t- "/vagrant/ansible/vault/htpasswd.yaml"
+
+- name: "Docker-Registry certs config"
+  hosts: "cluster"
+  become: true
+  gather_facts: false
+  roles:
+    - role: "docker-registry-config"
+      tags: "reg-config"
+
+- name: "Install MetalLB+Ingress+Jenkins"
+  hosts: "master"
+  become: true
+  gather_facts: false
+  roles:
+    - role: "metallb"
+      tags: "metallb"
+    - role: "ingress-nginx"
+      tags: "ingress"
+    - role: "jenkins"
+      tags: "jenkins"
+  vars_files:
+    - "/vagrant/ansible/vault/vault.yaml"
+
+# # Only temporary, uncomment if you want to verify everything is running as it should - reffer to README.md
+#   tasks:
+#     - name: "TEMPORARY SOLUTION.. Running bash script to deploy nginx pod"
+#       become: false
+#       ansible.builtin.shell: "bash /vagrant/bash.sh"
+#       args:
+#         executable: "/bin/bash"
+
+- name: "Create entry in /etc/hosts"
+  hosts: "cluster"
+  become: true
+  gather_facts: false
+  tasks:
+  # Adding host example.XXXX.com to /etc/hosts
+    - name: "Creating entry in /etc/hosts with DNS names"
+      ansible.builtin.lineinfile:
+        state: "present"
+        dest: "/etc/hosts"
+        line: "{{ item.ip }} {{ item.name }}"
+      with_items:
+        - {ip: "192.168.56.240", name: "example.nginx.com"}
+        - {ip: "192.168.56.240", name: "example.jenkins.com"}

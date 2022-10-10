@@ -1,0 +1,70 @@
+---
+# Pre-install config
+- name: "Modify kube-proxy config file to enable strict ARP so we can use MetalLB properly"
+  become: false
+  ansible.builtin.shell: |
+    set -o pipefail && kubectl get configmap kube-proxy -n kube-system -o yaml | \
+    sed -e 's/strictARP: false/strictARP: true/' | kubectl apply -f - -n kube-system
+  args:
+    executable: "/bin/bash"
+  register: "configmap"
+  changed_when: 'configmap.stdout != ""'
+
+# Add helm chart repository for MetalLB
+- name: "Add MetalLB helm chart repo"
+  become: false
+  kubernetes.core.helm_repository:
+    name: "metallb"
+    repo_url: "https://metallb.github.io/metallb"
+
+# Install MetalLB
+- name: "Deploy MetalLB chart"
+  become: false
+  kubernetes.core.helm:
+    name: "metallb"
+    chart_ref: "metallb/metallb"
+    release_namespace: "metallb-system"
+    create_namespace: true
+  notify: "Are-metallb-pods-ready"
+
+# Run handlers now
+- name: "Flush handlers"
+  ansible.builtin.meta: "flush_handlers"
+
+# Need to be deleted because IPAddressPool for MetalLB will not work
+- name: "Delete ValidatingWebhookConfiguration for metallb"
+  become: false
+  ansible.builtin.shell: "kubectl delete -A ValidatingWebhookConfiguration metallb-webhook-configuration"
+  register: "webhook"
+  changed_when: "not 'NotFound' in webhook.stdout"
+  args:
+    executable: "/bin/bash"
+
+# This Deployment will asign selected range of IP addresses to the kubernetes services
+- name: "Create IPAddressPool deployment"
+  become: false
+  kubernetes.core.k8s:
+    state: "present"
+    definition:
+      apiVersion: "metallb.io/v1beta1"
+      kind: "IPAddressPool"
+      metadata:
+        name: "metallb-addresspool"
+        namespace: "metallb-system"
+      spec:
+        addresses: # range of IP adresses that will be assigned to the services
+          - "192.168.56.240-192.168.56.254"
+
+- name: "Create L2Advertisement deployment"
+  become: false
+  kubernetes.core.k8s:
+    state: "present"
+    definition:
+      apiVersion: "metallb.io/v1beta1"
+      kind: "L2Advertisement"
+      metadata:
+        name: "metallb-advertisement"
+        namespace: "metallb-system"
+      spec:
+        ipAddressPools:
+          - "metallb-addresspool"

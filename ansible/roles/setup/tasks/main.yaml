@@ -1,0 +1,89 @@
+---
+# Doing this preventively because it can collide with our apt-get tasks
+- name: "Stop apt-daily"
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: "stopped"
+  with_items:
+    - "apt-daily.timer"
+    - "apt-daily-upgrade.timer"
+  register: "apt"
+
+# To prevent ansible freezing
+- name: "Make enviroment non-interactive 1/2"
+  ansible.builtin.lineinfile:
+    path: "/home/vagrant/.bashrc"
+    line: "DEBIAN_FRONTEND=noninteractive"
+    state: "present"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0775"
+  register: "frontend"
+
+- name: "Make enviroment non-interactive 2/2"
+  when: "frontend is succeeded"
+  ansible.builtin.shell: "source /home/vagrant/.bashrc"
+  args:
+    executable: "/bin/bash"
+
+# Full system upgrade
+- name: "Running apt-get upgrade"
+  ansible.builtin.apt:
+    upgrade: "full"
+
+- name: "Running apt-get dist-upgrade"
+  ansible.builtin.apt:
+    upgrade: "dist"
+
+- name: "Pasting IP adresses of hosts and master"
+  ansible.builtin.lineinfile:
+    state: "present"
+    dest: "/etc/hosts"
+    line: "{{ item.ip }} {{ item.name }}"
+  with_items:
+    - { ip: "192.168.56.11", name: "master-1" }
+    - { ip: "192.168.56.101", name: "node-1" }
+    - { ip: "192.168.56.102", name: "node-2" }
+
+- name: "Setting DNS server address to 8.8.8.8"
+  ansible.builtin.lineinfile:
+    state: "present"
+    path: "/etc/systemd/resolved.conf"
+    regexp: "#DNS="
+    line: "DNS=8.8.8.8"
+
+# Restart systemd-resolved to apply changes
+- name: "Restart systemd-resolved"
+  ansible.builtin.systemd:
+    state: "restarted"
+    daemon_reload: true
+    name: "systemd-resolved"
+
+# Disable Firewall
+- name: "Disable UFW"
+  community.general.ufw:
+    state: "disabled"
+
+# Paswordless sudo
+- name: "Allow 'vagrant' to have passwordless sudo"
+  ansible.builtin.lineinfile:
+    state: "present"
+    dest: "/etc/sudoers"
+    line: 'vagrant ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+# Installation of basic packages
+- name: "Install basic apt-get packages"
+  ansible.builtin.apt:
+    force_apt_get: true
+    name: "{{ item }}"
+    state: "present"
+    update_cache: true
+  with_items:
+    - "python3-apt"
+    - "apt-transport-https"
+    - "ca-certificates"
+    - "curl"
+    - "gnupg-agent"
+    - "software-properties-common"
+    - "pip"

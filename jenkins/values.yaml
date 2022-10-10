@@ -1,0 +1,62 @@
+controller:
+  componentName: "jenkins-controller"
+  image: "docker.registry.com:5000/jenkins"
+  tag: "v1"
+  imagePullPolicy: "Always"
+  # We need to have kubernetes secret in the same namespace 
+  # as helm chart deployment
+  imagePullSecretName: "regsecret" 
+
+  nodeSelector:
+    kubernetes.io/hostname: master-1
+
+  servicePort: 80
+  targetPort: 8080
+
+  JCasC:
+    # defaultConfig: false
+    securityRealm: |-
+      local:
+        allowsSignup: false
+        enableCaptcha: false
+        users:
+        - id: "admin"
+          name: "Jenkins Admin"
+          password: "admin-password"
+        - id: "user"
+          name: "Jenkins User"
+          password: "user-password"
+
+    installPlugins:
+    - kubernetes:3600.v144b_cd192ca_a_
+    - workflow-aggregator:581.v0c46fa_697ffd
+    - git:4.11.3
+    - configuration-as-code:1429.v09b_044a_c93de
+  
+  ingress:
+    enabled: true
+    apiVersion: "networking.k8s.io/v1"
+    ingressClassName: "nginx"
+    path: "/"
+    hostName: "example.jenkins.com"
+    
+agent:
+  enabled: true
+  namespace: jenkins-system
+  disableDefaultAgent: false
+
+additionalAgents:
+  jjb-agent:
+    podName: jjb-agent
+    customJenkinsLabels: jjb-agent
+    image: docker.registry.com:5000/jjb-agent
+    tag: "v1"
+    imagePullSecretName: regsecret
+    command:
+    args: "${computer.jnlpmac} ${computer.name}"
+    resources:
+      limits:
+        cpu: "512m"
+        memory: "512Mi"
+      alwaysPullImage: true
+      

@@ -1,0 +1,5 @@
+---
+- name: "Join_node"
+  ansible.builtin.shell: "bash /tmp/join-command.sh"
+  args:
+    executable: "/bin/bash"

@@ -1,0 +1,118 @@
+---
+# Install required python libraries and htpasswd
+- name: "Install Python libraries"
+  ansible.builtin.pip:
+    name:
+      - "passlib"
+      - "cryptography"
+
+- name: "Install htpasswd"
+  ansible.builtin.apt:
+    force_apt_get: "true"
+    name: "apache2-utils"
+    state: "present"
+    update_cache: "true"
+
+- name: "Create auth and certs directories if they do not exist"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: "directory"
+    mode: "0755"
+  with_items:
+    - "/vagrant/auth"
+    - "/vagrant/certs"
+
+# Generating SSL private key
+- name: "Generate an OpenSSL private key"
+  community.crypto.openssl_privatekey:
+    state: "present"
+    path: "/vagrant/certs/registry.key"
+    type: "RSA"
+    size: "4096"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0744"
+
+# Generating certificate signing request
+- name: "Generate an OpenSSL Certificate Signing Request with Subject information"
+  community.crypto.openssl_csr:
+    path: "/vagrant/certs/registry.csr"
+    privatekey_path: "/vagrant/certs/registry.key"
+    common_name: "docker.registry.com"
+    subject_alt_name: "IP:192.168.56.11,DNS:docker.registry.com"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0744"
+
+# Generating self-signed SSL certificate
+- name: "Generate a Self Signed OpenSSL certificate"
+  community.crypto.x509_certificate:
+    path: "/vagrant/certs/registry.crt"
+    privatekey_path: "/vagrant/certs/registry.key"
+    csr_path: "/vagrant/certs/registry.csr"
+    provider: "selfsigned"
+    owner: "vagrant"
+    group: "vagrant"
+    mode: "0744"
+
+# Authentication file for docker registry
+- name: "Generate htpasswd file"
+  community.general.htpasswd:
+    path: "/vagrant/auth/htpasswd"
+    name: "(( htpasswd.username ))" # user"
+    password: "(( htpasswd.password ))" # password"
+    crypt_scheme: "bcrypt"
+    mode: "0744"
+
+- name: "Encode username:password for docker secret" # noqa no-shorthand
+  ansible.builtin.shell: |
+    set -o pipefail \
+    && USERNAME=$(echo -n "{{ docker.private.username }}") \
+    && PASSWORD=$(echo -n "{{ docker.private.password }}") \
+    && AUTH=$(echo -n "$USERNAME:$PASSWORD" | base64 ) \
+    && ECHO='{"auths":{"docker.registry.com:5000":{"username":"'$USERNAME'","password":"'$PASSWORD'","auth":"'$AUTH'"}}}' \
+    && echo -n $ECHO | base64 --wrap=0
+  register: echo
+  changed_when: 'echo.stdout != ""'
+  args:
+    executable: "/bin/bash"
+
+# Create docker secret with login credentials in namespace jenkins-system
+- name: "Create k8s secret with docker.registry.com login credentials in namespace jenkins-system"
+  become: false
+  kubernetes.core.k8s:
+    state: "present"
+    definition:
+      apiVersion: "v1"
+      kind: "Secret"
+      metadata:
+        name: "regsecret"
+        namespace: "default"
+      type: "kubernetes.io/dockerconfigjson"
+      data:
+        .dockerconfigjson: "{{ echo.stdout }}"
+
+- name: "Run docker-compose up and start docker-registry service"
+  community.docker.docker_compose:
+    project_name: "docker.registry.com"
+    definition:
+      version: "3"
+      services:
+        docker.registry.com:
+          container_name: "docker.registry.com"
+          image: "registry:latest"
+          restart: "unless-stopped"
+          volumes:
+            - "registry-data:/var/lib/registry"
+            - "/vagrant/certs:/certs/"
+            - "/vagrant/auth:/auth/"
+          environment:
+            REGISTRY_HTTP_TLS_CERTIFICATE: "/certs/registry.crt"
+            REGISTRY_HTTP_TLS_KEY: "/certs/registry.key"
+            REGISTRY_AUTH: "htpasswd"
+            REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+            REGISTRY_AUTH_HTPASSWD_PATH: "/auth/htpasswd"
+          ports:
+            - "5000:5000"
+      volumes:
+        registry-data: {}

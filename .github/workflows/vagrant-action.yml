@@ -1,0 +1,31 @@
+name: vagrant-action
+on: 
+  push:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Add vagrant GPG key
+        run: wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+      - name: Add deb repo
+        run: echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+      - name: Install vagrant
+        run: sudo apt update && sudo apt install vagrant
+
+      - name: Show Vagrant version
+        run: vagrant --version
+
+      - name: Downloading Vagrant plugins
+        run: vagrant plugin install vagrant-hostmanager 
+        
+      - name: Downloading Vagrant plugins
+        run: vagrant plugin install vagrant-vbguest
+    
+      - name: Run vagrant validate
+        run: vagrant validate -v

@@ -1,0 +1,20 @@
+name: docker-action
+on: push
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps: 
+    - name: Checkout
+      uses: actions/checkout@master
+    
+    - name: install npm
+      run: sudo apt-get update && sudo apt-get install npm -y
+
+    - name: download dockerfilelint
+      run: sudo npm install -g dockerfilelint # npm install -g dockerlinter
+
+    - name: run dockerfilelint
+      run: dockerfilelint dockerfiles/* # dockerlinter -f dockerfiles/*
+
+      

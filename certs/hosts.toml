@@ -1,0 +1,5 @@
+server = "https://registry-1.docker.io"
+
+[host."https://docker.registry.com:5000"]
+#  skip_verify = true
+  ca = "/etc/docker/certs.d/docker.registry.com:5000/ca.crt"
