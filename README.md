@@ -4,6 +4,8 @@
 
 2. ``` echo "192.168.56.240 myapp.example.com" > /etc/hosts```
 
+If you want to test this task, uncomment section in ansible/site.yaml
+
 Docker Registry is running on master-1 virtual machine, with authentication and https encryption. 
 It is accesible within the local network, also inside the cluster. 
 
