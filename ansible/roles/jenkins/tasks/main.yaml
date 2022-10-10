@@ -141,7 +141,7 @@
               - name: "update-job"
                 image: "docker.registry.com:5000/jjb-agent:v1"
                 command: ["/bin/sh"]
-                args: ["-c", "sh /jobs/generate-config.sh && jenkins-jobs --conf /jobs/config.ini --ignore-cache update /jobs/update-job.yaml"]
+                args: ["-c", "jenkins-jobs --conf /jobs/config.ini --ignore-cache update /jobs/update-job.yaml"]
                 imagePullPolicy: "Always"
                 volumeMounts:
                   - name: "jobs"
