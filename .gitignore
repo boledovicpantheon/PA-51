@@ -1,5 +1,4 @@
 .vagrant
 .vscode
 join-command
-box/
 certs/registry.*
